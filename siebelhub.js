@@ -21,6 +21,7 @@
  13-DEC-2015    v0.3    ahansal     added AlignViewToTop method
  14-DEC-2015    v0.4    ahansal     added ValidateContext to support applet, PM or PR as context
  14-DEC-2015    v0.5    ahansal     enhanced ErrorHandler with more cowbell
+ 15-DEC-2015    v0.5    ahansal     created GitHub repository
  *******************************************************************/
 
 siebelhub = function(){
