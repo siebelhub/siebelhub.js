@@ -1,0 +1,9 @@
+.siebui-logo{
+    background-image: url("http://www.siebelhub.com/main/wp-content/uploads/2015/12/hub-small.png")!important;
+    width: 147px!important;
+    margin: -4px 4px;
+   }
+
+.siebelhub_error_dlg > .ui-dialog-titlebar{
+    background-color: coral!important;
+}
