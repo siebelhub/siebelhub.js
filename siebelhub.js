@@ -155,6 +155,11 @@ siebelhub.AlignViewToTop = function(activateTopApplet){
     }
 };
 
+/*
+ Function ValidateContext: returns a valid PM instance for Applet, PW or PR
+ Inputs: Applet object, PM, PW or PR instance
+ Returns: PM instance for valid input, null for invalid input
+ */
 siebelhub.ValidateContext = function(object){
     try{
         var pm = null;
