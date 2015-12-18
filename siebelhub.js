@@ -21,6 +21,9 @@
  13-DEC-2015    v0.3    ahansal     added AlignViewToTop method
  14-DEC-2015    v0.4    ahansal     added ValidateContext to support applet, PM or PR as context
  14-DEC-2015    v0.5    ahansal     enhanced ErrorHandler with more cowbell
+ 15-DEC-2015    v0.5    ahansal     published on GitHub
+ 17-DEC-2015    v0.6    ahansal     added GetRecordSet method
+ 18-DEC-2015    v0.7    ahansal     added GetAppletType method
  *******************************************************************/
 
 siebelhub = function(){
@@ -155,6 +158,71 @@ siebelhub.AlignViewToTop = function(activateTopApplet){
     }
 };
 
+/*ideas, tbc*/
+//optimize siebelhub.js for list applets
+//get value by BC field name
+
+
+/*
+ Function GetAppletType: Returns the type (list, form, tree, chart) of applet
+ Inputs: "context" (applet, PM or PR)
+ Returns: type of applet as null or string
+ */
+siebelhub.GetAppletType = function(context){
+    debugger;
+    var type = null;
+    var pm = null;
+    var id = null;
+    //if we got an applet instance, it could be a list applet...
+    if(typeof(context.GetListOfColumns) === "function"){
+        type = shMsg["TYPE_LIST"];
+    }
+    //if we got a PM, we can try get the list of columns
+    else if (typeof(context.Get) === "function"){
+        if(context.Get("GetListOfColumns")){
+            type = shMsg["TYPE_LIST"];
+        }
+    }
+    //if we got a PR, get the PM and try again
+    else if (typeof(context.GetPM) === "function"){
+        if(context.GetPM().Get("GetListOfColumns")){
+            type = shMsg["TYPE_LIST"];
+        }
+    }
+
+    pm = siebelhub.ValidateContext(context);
+    //could be a tree or chart, let's see...
+
+    if (pm){
+        id = pm.Get("GetFullId");
+        if ($("#" + id).find(".siebui-tree").length != 0){
+            type =  shMsg["TYPE_TREE"];
+        }
+        else if (!type){
+            id = pm.Get("GetFullId").split("_")[1];
+            id = id.toLowerCase().charAt(0) + "_" + id.charAt(1);
+            if ($("#" + id).find(".siebui-charts-container").length != 0){
+                type = shMsg["TYPE_CHART"];
+            }
+            else{
+                type = shMsg["TYPE_FORM"];
+            }
+        }
+
+    }
+    return type;
+};
+
+siebelhub.GetRecordSet = function(raw){
+    var recordset;
+    if(raw){
+        recordset = siebelhub.GetActivePM().Get("GetRawRecordSet");
+    }
+    else{
+        recordset = siebelhub.GetActivePM().Get("GetRecordSet");
+    }
+    return recordset;
+};
 /*
  Function ValidateContext: returns a valid PM instance for Applet, PW or PR
  Inputs: Applet object, PM, PW or PR instance
@@ -238,3 +306,7 @@ shMsg["OK"]             = "OK";
 shMsg["ERROR_DLG_TITLE"]= "whoopsy-daisy..."
 shMsg["NOPM_1"]         = "This function requires valid context (Applet, PM or PR).";
 shMsg["NOCTRL_1"]       = "This function requires a valid control reference.";
+shMsg["TYPE_LIST"]      = "list";
+shMsg["TYPE_FORM"]      = "form";
+shMsg["TYPE_CHART"]     = "chart";
+shMsg["TYPE_TREE"]      = "tree";
