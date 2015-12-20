@@ -2,7 +2,7 @@
  File:          siebelhub.js
  Author(s):     alex@siebelhub.com
  Date:          Dec 2015
- Description:   Siebel Hub library for Siebel Open UI.
+ Description:   Educational/Phenomenal/Inspirational/Comprehensive (EPIC) JavaScript library for Siebel Open UI.
  See individual functions for details.
  For localization options, scroll down.
  Installation:  Copy this file to siebel/custom folder and
@@ -28,6 +28,13 @@
  20-DEC-2015    v0.8    ahansal     optimized MakeAppletCollapsible method to accept "ALL" keyword
  20-DEC-2015    v0.9    ahansal     added GetFieldValue method, optimized GetRecordSet
  20-DEC-2015    v1.0    ahansal     added GetAppletsByBCName method
+ 20-DEC-2015    v1.0    ahansal     added GenerateDOMElement method, used in ErrorHandler
+
+ TODO:
+optimize siebelhub.js for list applets
+check for PW compatibility
+Data Retriever (maybe use PRM ANI Utility Service)
+
  *******************************************************************/
 
 siebelhub = function(){
@@ -98,6 +105,9 @@ siebelhub.GetFieldValue = function (field, context){
             pm = siebelhub.GetActivePM();
         }
     }
+    else{
+        pm = siebelhub.GetActivePM();
+    }
 
     //verify BC
     if (bcname){
@@ -112,7 +122,9 @@ siebelhub.GetFieldValue = function (field, context){
     return value;
 };
 /*
-Function GetAppletByBCName: Gets an array of applets that use the BC (in current view)
+Function GetAppletsByBCName: Gets an array of applets that use the BC (in current view)
+Inputs: Name of BC as string
+Returns: array of applets found or null
  */
 siebelhub.GetAppletsByBCName = function (bcname){
     var appletmap = SiebelApp.S_App.GetActiveView().GetAppletMap();
@@ -235,12 +247,18 @@ siebelhub.AlignViewToTop = function(activateTopApplet){
     }
 };
 
-/*ideas, tbc*/
-//optimize siebelhub.js for list applets
-//DOM element generator
-//Data Retriever (maybe use PRM ANI Utility Service)
-
-
+/*
+Function GenerateDOMElement: Generates HTML element
+Inputs: Element type (e.g. "DIV"), attributes as object (e.g. {class: "myClass"})
+Returns: HTML element
+ */
+siebelhub.GenerateDOMElement = function(type, attributes){
+    var elem = $("<" + type + ">");
+    if (attributes){
+        elem.attr(attributes);
+    }
+    return elem;
+};
 /*
  Function GetAppletType: Returns the type (list, form, tree, chart) of applet
  Inputs: "context" (applet, PM or PR)
@@ -349,7 +367,9 @@ siebelhub.ValidateContext = function(object){
 siebelhub.ErrorHandler = function(e){
     //alert(e.toString());
     //$("<div>" + e.toString() + "</div>").dialog();
-    $("<div>" + e.toString() + "</div>").dialog({
+    var dlg = siebelhub.GenerateDOMElement("div");
+    dlg.html(e.toString());
+    dlg.dialog({
         buttons: [
             {
                 text: shMsg["OK"],
@@ -383,7 +403,7 @@ siebelhub.HelloWorld = function (msg) {
 SiebelApp.EventManager.addListner("postload", SiebelHubPL);
 function SiebelHubPL(){
     SiebelJS.Log("siebelhub.js: Running SiebelHubPL postload event listner...");
-    siebelhub.AlignViewToTop();
+    siebelhub.AlignViewToTop(true);
     siebelhub.MakeAppletCollapsible("ALL");
 }
 
