@@ -24,6 +24,10 @@
  15-DEC-2015    v0.5    ahansal     published on GitHub
  17-DEC-2015    v0.6    ahansal     added GetRecordSet method
  18-DEC-2015    v0.7    ahansal     added GetAppletType method
+ 20-DEC-2015    v0.8    ahansal     added postload event listner (as demo)
+ 20-DEC-2015    v0.8    ahansal     optimized MakeAppletCollapsible method to accept "ALL" keyword
+ 20-DEC-2015    v0.9    ahansal     added GetFieldValue method, optimized GetRecordSet
+ 20-DEC-2015    v1.0    ahansal     added GetAppletsByBCName method
  *******************************************************************/
 
 siebelhub = function(){
@@ -66,6 +70,65 @@ siebelhub.GetControlValue = function (context,control){
     }
 };
 
+/*
+Function GetFieldValue: Gets a BC field value from the context record set
+Inputs: BC.Field or Field as string, context optional (uses BC or active PM if context is not provided)
+Returns: current control value
+ */
+siebelhub.GetFieldValue = function (field, context){
+    var bcname = null;
+    var pm = null;
+    var value = null;
+    //check for dot notation
+    var tmp = field.split(".");
+    if (tmp[1]){
+        field = tmp[1];
+        bcname = tmp[0];
+    }
+    //get PM
+    if (context){
+       pm = siebelhub.ValidateContext(context);
+    }
+    else if (bcname){
+        var applets = siebelhub.GetAppletsByBCName(bcname);
+        if (applets){
+            pm = siebelhub.ValidateContext(applets[0]);
+        }
+        else{
+            pm = siebelhub.GetActivePM();
+        }
+    }
+
+    //verify BC
+    if (bcname){
+        if (bcname != pm.Get("GetBusComp").GetName()){
+            siebelhub.ErrorHandler(shMsg["NOBC_1"]);
+            return null;
+        }
+    }
+    var recordset = siebelhub.GetRecordSet(true,pm);
+    var index = pm.Get("GetSelection");
+    value = recordset[index][field];
+    return value;
+};
+/*
+Function GetAppletByBCName: Gets an array of applets that use the BC (in current view)
+ */
+siebelhub.GetAppletsByBCName = function (bcname){
+    var appletmap = SiebelApp.S_App.GetActiveView().GetAppletMap();
+    var applets = [];
+    for (applet in appletmap){
+        if (appletmap[applet].GetBusComp().GetName() == bcname){
+              applets.push(appletmap[applet]);
+        }
+    }
+    if (applets.length == 0){
+        return null;
+    }
+    else{
+        return applets;
+    }
+}
 /*
  Function GetActivePM: Gets the PM of the active applet
  Inputs: nothing
@@ -131,20 +194,34 @@ siebelhub.GetControlObjByLabel = function(context,label){
 /*
  Function MakeAppletCollapsible: overrides the defaultAppletDisplayMode property
  and enables Siebel OOB collapsibility
- Inputs: applet object, PM or PR
+ Inputs: applet object, PM or PR. Special treat: input "ALL" calls self for each applet in active view
  Kudos: Jan Peterson
  */
 siebelhub.MakeAppletCollapsible = function(context){
-    var pm = siebelhub.ValidateContext(context);
-    if (pm){
-        if (!pm.Get("defaultAppletDisplayMode")) {
-            pm.SetProperty("defaultAppletDisplayMode","expanded"); //or "collapsed"
-            var pr = pm.GetRenderer();
-            if (pr && typeof(pr.ShowCollapseExpand) === 'function'){
-                pm.GetRenderer().ShowCollapseExpand();
+    switch (context){
+        case "ALL":
+        case "all":
+        case "All":
+            var activeView = SiebelApp.S_App.GetActiveView();
+            var appletmap = activeView.GetAppletMap();
+            for (applet in appletmap){
+                siebelhub.MakeAppletCollapsible(appletmap[applet]);
             }
-        }
+            break;
+        default:
+            var pm = siebelhub.ValidateContext(context);
+            if (pm){
+                if (!pm.Get("defaultAppletDisplayMode")) {
+                    pm.SetProperty("defaultAppletDisplayMode","expanded"); //or "collapsed"
+                    var pr = pm.GetRenderer();
+                    if (pr && typeof(pr.ShowCollapseExpand) === 'function'){
+                        pm.GetRenderer().ShowCollapseExpand();
+                    }
+                }
+            }
+            break;
     }
+
 };
 
 /*
@@ -160,7 +237,8 @@ siebelhub.AlignViewToTop = function(activateTopApplet){
 
 /*ideas, tbc*/
 //optimize siebelhub.js for list applets
-//get value by BC field name
+//DOM element generator
+//Data Retriever (maybe use PRM ANI Utility Service)
 
 
 /*
@@ -169,7 +247,6 @@ siebelhub.AlignViewToTop = function(activateTopApplet){
  Returns: type of applet as null or string
  */
 siebelhub.GetAppletType = function(context){
-    debugger;
     var type = null;
     var pm = null;
     var id = null;
@@ -212,14 +289,26 @@ siebelhub.GetAppletType = function(context){
     }
     return type;
 };
-
-siebelhub.GetRecordSet = function(raw){
-    var recordset;
+/*
+  Function GetRecordSet: returns record set (raw, not raw) of active applet or context object (PM,PR,applet)
+  Inputs: bool for raw or not, optional context
+  Returns: record set instance
+ */
+siebelhub.GetRecordSet = function(raw,context){
+    var recordset = null;
+    var pm = null;
+    if (context){
+       pm = siebelhub.ValidateContext(context);
+    }
+    else
+    {
+        pm = siebelhub.GetActivePM();
+    }
     if(raw){
-        recordset = siebelhub.GetActivePM().Get("GetRawRecordSet");
+        recordset = pm.Get("GetRawRecordSet");
     }
     else{
-        recordset = siebelhub.GetActivePM().Get("GetRecordSet");
+        recordset = pm.Get("GetRecordSet");
     }
     return recordset;
 };
@@ -289,6 +378,16 @@ siebelhub.HelloWorld = function (msg) {
 };
 
 /*
+ Simple postload event listner ;-)
+ */
+SiebelApp.EventManager.addListner("postload", SiebelHubPL);
+function SiebelHubPL(){
+    SiebelJS.Log("siebelhub.js: Running SiebelHubPL postload event listner...");
+    siebelhub.AlignViewToTop();
+    siebelhub.MakeAppletCollapsible("ALL");
+}
+
+/*
  Fun-ctions
  */
 siebelhub.GoToTheHub = function(){
@@ -306,6 +405,9 @@ shMsg["OK"]             = "OK";
 shMsg["ERROR_DLG_TITLE"]= "whoopsy-daisy..."
 shMsg["NOPM_1"]         = "This function requires valid context (Applet, PM or PR).";
 shMsg["NOCTRL_1"]       = "This function requires a valid control reference.";
+shMsg["NOBC_1"]         = "Current applet does not use the BC provided";
+
+//these might not need translation since they are more like Constance ;-)
 shMsg["TYPE_LIST"]      = "list";
 shMsg["TYPE_FORM"]      = "form";
 shMsg["TYPE_CHART"]     = "chart";
