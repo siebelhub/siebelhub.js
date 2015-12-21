@@ -30,6 +30,7 @@
  20-DEC-2015    v1.0    ahansal     added GetAppletsByBCName method
  20-DEC-2015    v1.0    ahansal     added GenerateDOMElement method, used in ErrorHandler
  20-DEC-2015    v1.1    ahansal     feeling stable, added lots of comments and revisited some functions
+ 21-DEC-2015    v1.1    ahansal     minor updates
 
  TODO:
  optimize siebelhub.js for list applets
@@ -38,6 +39,7 @@
  Get Applet DOM element
  conditional formatting
  Get Active PR
+ Get Label DOM elem for a control / column header DOM elem for a list column
  test a lot!
  *******************************************************************/
 
