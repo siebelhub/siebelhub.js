@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<REPOSITORY
+   NAME="Siebel Repository"
+   UPDATED="04/03/2015 01:52:46"
+   UPDATED_BY="SADMIN"
+   CREATED="04/03/2015 00:43:41"
+   CREATED_BY="SADMIN"
+   FIO_PLACEHOLDER_FIO="TRUE">
+	<PROJECT
+	   ALLOW_OBJECT_LOCKING="Y"
+	   INACTIVE="N"
+	   LANGUAGE_LOCKED="ENU"
+	   LOCKED="Y"
+	   LOCKED_DATE="12/24/2015 09:53:04"
+	   NAME="Siebel Hub"
+	   UI_FREEZE="N"
+	   LOCKED_BY_NAME="SADMIN"
+	   UPDATED="12/24/2015 11:05:37"
+	   UPDATED_BY="SADMIN"
+	   CREATED="12/24/2015 09:52:59"
+	   CREATED_BY="SADMIN"
+	   FIO_PLACEHOLDER_FIO="TRUE">
+		<BUSINESS_SERVICE
+		   CACHE="N"
+		   CLASS="CSSService"
+		   EXTERNAL_USE="Y"
+		   HIDDEN="N"
+		   INACTIVE="N"
+		   NAME="Siebel Hub Service"
+		   OBJECT_LANGUAGE_LOCKED="ENU"
+		   OBJECT_LOCKED="Y"
+		   OBJECT_LOCKED_DATE="12/24/2015 09:53:46"
+		   SERVER_ENABLED="N"
+		   STATE_MANAGEMENT_TYPE="Stateful"
+		   WEB_SERVICE_ENABLED="N"
+		   OBJECT_LOCKED_BY_NAME="SADMIN"
+		   UPDATED="12/24/2015 10:57:01"
+		   UPDATED_BY="SADMIN"
+		   CREATED="12/24/2015 09:53:09"
+		   CREATED_BY="SADMIN">
+			<BUSINESS_SERVICE_LOCALE
+			   APPLICATION_CODE="STD"
+			   DISPLAY_NAME="Siebel Hub Service"
+			   INACTIVE="N"
+			   LANGUAGE_CODE="ENU"
+			   NAME="ENU-STD"
+			   TRANSLATE="Y"
+			   UPDATED="12/24/2015 09:53:47"
+			   UPDATED_BY="SADMIN"
+			   CREATED="12/24/2015 09:53:47"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_LOCALE>
+			<BUSINESS_SERVICE_METHOD
+			   HIDDEN="N"
+			   INACTIVE="N"
+			   NAME="GetData"
+			   UPDATED="12/24/2015 10:09:56"
+			   UPDATED_BY="SADMIN"
+			   CREATED="12/24/2015 09:53:57"
+			   CREATED_BY="SADMIN">
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="Business Component"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="12/24/2015 10:04:55"
+				   UPDATED_BY="SADMIN"
+				   CREATED="12/24/2015 09:54:33"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="Business Object"
+				   OPTIONAL="Y"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="12/24/2015 09:54:42"
+				   UPDATED_BY="SADMIN"
+				   CREATED="12/24/2015 09:54:19"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="Hierarchy"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="Output Fields"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Hierarchy"
+				   TYPE="Input"
+				   UPDATED="12/24/2015 10:09:56"
+				   UPDATED_BY="SADMIN"
+				   CREATED="12/24/2015 10:09:27"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="Hierarchy"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="Record Set"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Hierarchy"
+				   TYPE="Output"
+				   UPDATED="12/24/2015 10:09:47"
+				   UPDATED_BY="SADMIN"
+				   CREATED="12/24/2015 09:55:21"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="Search Specification"
+				   OPTIONAL="N"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="12/24/2015 09:54:50"
+				   UPDATED_BY="SADMIN"
+				   CREATED="12/24/2015 09:54:50"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_ARG
+				   DATA_TYPE="String"
+				   HIDDEN="N"
+				   INACTIVE="N"
+				   NAME="Sort Specification"
+				   OPTIONAL="Y"
+				   STORAGE_TYPE="Property"
+				   TYPE="Input"
+				   UPDATED="12/24/2015 09:55:07"
+				   UPDATED_BY="SADMIN"
+				   CREATED="12/24/2015 09:55:07"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_ARG>
+				<BUSINESS_SERVICE_METHOD_LOCALE
+				   APPLICATION_CODE="STD"
+				   DISPLAY_NAME="Get Data"
+				   INACTIVE="N"
+				   LANGUAGE_CODE="ENU"
+				   NAME="ENU-STD"
+				   TRANSLATE="Y"
+				   UPDATED="12/24/2015 09:54:17"
+				   UPDATED_BY="SADMIN"
+				   CREATED="12/24/2015 09:54:17"
+				   CREATED_BY="SADMIN">
+				</BUSINESS_SERVICE_METHOD_LOCALE>
+			</BUSINESS_SERVICE_METHOD>
+			<BUSINESS_SERVICE_SERVER_SCRIPT
+			   INACTIVE="N"
+			   NAME="(declarations)"
+			   PROGRAM_LANGUAGE="JS"
+			   SCRIPT="//Your public declarations go here..."
+			   SEQUENCE="1"
+			   UPDATED="12/24/2015 10:11:14"
+			   UPDATED_BY="SADMIN"
+			   CREATED="12/24/2015 10:11:14"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_SERVER_SCRIPT>
+			<BUSINESS_SERVICE_SERVER_SCRIPT
+			   INACTIVE="N"
+			   NAME="GetData"
+			   PROGRAM_LANGUAGE="JS"
+			   SCRIPT="function GetData(Inputs, Outputs){
+	var oBO : BusObject;
+	var oBC : BusComp;
+	var cPS : PropertySet = TheApplication().NewPropertySet();
+	var oPS : PropertySet = TheApplication().NewPropertySet();
+	var field : String;
+	var sBCName : String = Inputs.GetProperty(&quot;Business Component&quot;);
+	var counter : Number = 0;
+	var sSearchSpec = Inputs.GetProperty(&quot;Search Specification&quot;);
+	if (sSearchSpec == &quot;&quot;){
+		sSearchSpec = &quot;[Id] IS NOT NULL&quot;;
+	}
+	var sSortSpec = Inputs.GetProperty(&quot;Sort Specification&quot;);
+	if (sSortSpec == &quot;&quot;){
+		sSortSpec = &quot;Id&quot;;
+	}
+	var fields = Inputs.GetChild(0);
+	if (Inputs.GetProperty(&quot;Business Object&quot;) != &quot;&quot;){
+		oBO = TheApplication().GetBusObject(Inputs.GetProperty(&quot;Business Object&quot;));
+	}
+	else{
+		oBO = TheApplication().ActiveBusObject();
+	}
+	if (oBO)
+	{
+		if (sBCName != &quot;&quot;){
+			oBC = oBO.GetBusComp(sBCName);
+		}
+		else{
+			throw(&quot;Invalid Business Component reference&quot;);
+		}
+	}
+	else{
+		throw(&quot;Failed to initialize Business Object&quot;);
+	}
+	if (oBC){
+		oBC.ClearToQuery();
+		oBC.ActivateMultipleFields(fields);
+		oBC.SetSearchExpr(sSearchSpec);
+		oBC.SetSortSpec(sSortSpec);
+		oBC.ExecuteQuery(ForwardOnly);
+		if (oBC.FirstRecord()){
+			do{
+				counter++;
+				field = fields.GetFirstProperty();
+				for (var i = 0; i &lt; fields.GetPropertyCount();i++){
+					cPS.SetProperty(field,oBC.GetFieldValue(field));
+					field = fields.GetNextProperty()
+				}
+				cPS.SetType(sBCName + &quot;_&quot; + ToString(counter));
+				Outputs.AddChild(cPS);
+				cPS = TheApplication().NewPropertySet();
+			}while (oBC.NextRecord());
+		}
+	}
+	else{
+		throw(&quot;Failed to initialize Business Component&quot;);
+	}
+	Outputs.SetProperty(&quot;Record Count&quot;, ToString(counter));
+	Outputs.SetType(&quot;Record Set&quot;);
+}"
+			   SEQUENCE="2"
+			   UPDATED="12/24/2015 10:57:01"
+			   UPDATED_BY="SADMIN"
+			   CREATED="12/24/2015 10:06:03"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_SERVER_SCRIPT>
+			<BUSINESS_SERVICE_SERVER_SCRIPT
+			   INACTIVE="N"
+			   NAME="Service_PreCanInvokeMethod"
+			   PROGRAM_LANGUAGE="JS"
+			   SCRIPT="function Service_PreCanInvokeMethod (MethodName, &amp;CanInvoke)
+{
+	return (ContinueOperation);
+}"
+			   SEQUENCE="3"
+			   UPDATED="12/24/2015 10:11:14"
+			   UPDATED_BY="SADMIN"
+			   CREATED="12/24/2015 10:05:47"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_SERVER_SCRIPT>
+			<BUSINESS_SERVICE_SERVER_SCRIPT
+			   INACTIVE="N"
+			   NAME="Service_PreInvokeMethod"
+			   PROGRAM_LANGUAGE="JS"
+			   SCRIPT="function Service_PreInvokeMethod (MethodName, Inputs, Outputs)
+{
+	try{
+		switch(MethodName){
+			case &quot;GetData&quot; : GetData(Inputs,Outputs);
+							 break;
+			default        : break;
+		}
+	}
+	catch(e){
+		TheApplication().RaiseErrorText(e.toString());
+	}
+	return (CancelOperation);
+}"
+			   SEQUENCE="4"
+			   UPDATED="12/24/2015 10:11:14"
+			   UPDATED_BY="SADMIN"
+			   CREATED="12/24/2015 09:56:10"
+			   CREATED_BY="SADMIN">
+			</BUSINESS_SERVICE_SERVER_SCRIPT>
+		</BUSINESS_SERVICE>
+	</PROJECT>
+</REPOSITORY>
+
+
+
