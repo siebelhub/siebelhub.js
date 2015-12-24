@@ -31,16 +31,16 @@
  20-DEC-2015    v1.0    ahansal     added GenerateDOMElement method, used in ErrorHandler
  20-DEC-2015    v1.1    ahansal     feeling stable, added lots of comments and revisited some functions
  21-DEC-2015    v1.1    ahansal     minor updates
+ 22-DEC-2015    v1.1    ahansal     added GetActivePR method
+ 24-DEC-2015    v1.2    ahansal     added DataRetriever method (requires Siebel Hub Service BS)
 
  TODO:
  optimize siebelhub.js for list applets
  check for PW compatibility
- Data Retriever (maybe use PRM ANI Utility Service)
  Get Applet DOM element
  conditional formatting
- Get Active PR
  Get Label DOM elem for a control / column header DOM elem for a list column
- test a lot!
+ test a lot! (self test?)
  *******************************************************************/
 
 siebelhub = function(){ //not sure if we ever need this
@@ -171,6 +171,17 @@ siebelhub.GetActivePM = function(){
 };
 
 /*
+ Function GetActivePR: Gets the PR of the active applet
+ Inputs: nothing
+ Returns: PR instance of active applet
+ */
+siebelhub.GetActivePR = function(){
+    var activeApplet = siebelhub.GetActiveApplet();
+    var activePR = activeApplet.GetPModel().GetRenderer();
+    return activePR;
+};
+
+/*
  Function GetActiveApplet: Gets the active applet
  Inputs: nothing
  Returns: active applet object instance
@@ -180,6 +191,8 @@ siebelhub.GetActiveApplet = function(){
     var activeApplet = activeView.GetActiveApplet();
     return activeApplet;
 };
+
+
 
 /*
  Function GetControlElemByLabel: Gets a control DOM element using the label text
@@ -223,6 +236,31 @@ siebelhub.GetControlObjByLabel = function(context,label){
     return controlObj;
 };
 
+/*
+ Function DataRetriever: Calls the Siebel Hub Service (server eScript BS) to run any query on any BO/BC
+ Inputs: BO, BC, Search Expression, Sort Spec, Field list as object (see use case below)
+ Returns: Property set with records returned
+ */
+//use case 1: Get some info on the active applet from the repository
+// var fields = {"Name":"","Business Component":"","Comments":""};
+// siebelhub.DataRetriever("Repository Applet","Repository Applet","[Name]='" + siebelhub.GetActiveApplet().GetName() + "'","",fields);
+siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields){
+    debugger;
+    var service = SiebelApp.S_App.GetService("Siebel Hub Service");
+    var iPS = SiebelApp.S_App.NewPropertySet();
+    var oPS;
+    var fPS = SiebelApp.S_App.NewPropertySet();
+    iPS.SetProperty("Business Object", busobj);
+    iPS.SetProperty("Business Component", buscomp);
+    iPS.SetProperty("Search Specification", searchspec);
+    iPS.SetProperty("Sort Specification", sortspec);
+    for (field in fields){
+       fPS.SetProperty(field,"");
+    }
+    iPS.AddChild(fPS);
+    oPS = service.InvokeMethod("GetData", iPS);
+    return oPS.GetChildByType("ResultSet");
+};
 /*
  Function MakeAppletCollapsible: overrides the defaultAppletDisplayMode property
  and enables Siebel OOB collapsibility
