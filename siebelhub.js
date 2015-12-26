@@ -33,6 +33,7 @@
  21-DEC-2015    v1.1    ahansal     minor updates
  22-DEC-2015    v1.1    ahansal     added GetActivePR method
  24-DEC-2015    v1.2    ahansal     added DataRetriever method (requires Siebel Hub Service BS)
+ 26-DEC-2015    v1.3    ahansal     added 'Tramp Stamp' and SelfDiagnostics
 
  TODO:
  optimize siebelhub.js for list applets
@@ -40,7 +41,9 @@
  Get Applet DOM element
  conditional formatting
  Get Label DOM elem for a control / column header DOM elem for a list column
- test a lot! (self test?)
+ use cases in GitHub Wiki
+ document on Siebel Hub
+ cross browser testing
  *******************************************************************/
 
 siebelhub = function(){ //not sure if we ever need this
@@ -67,7 +70,7 @@ siebelhub.SetControlValue = function (context,control,value){
         }
     }
     catch(e){
-        siebelhub.ErrorHandler(e);
+        siebelhub.ErrorHandler(e.toString() + " siebelhub.js:SetControlValue");
     }
 };
 
@@ -127,7 +130,7 @@ siebelhub.GetFieldValue = function (field, context){
     //verify input BC name against applet BC
     if (bcname && bcname != pm.Get("GetBusComp").GetName()){
         //applet does not use BC; this is an error...
-        siebelhub.ErrorHandler(shMsg["NOBC_1"]);
+        siebelhub.ErrorHandler(shMsg["NOBC_1"] + "siebelhub.js:GetFieldValue");
         return null;
     }
     //we should be safe now, let's get the record set
@@ -245,20 +248,28 @@ siebelhub.GetControlObjByLabel = function(context,label){
 // var fields = {"Name":"","Business Component":"","Comments":""};
 // siebelhub.DataRetriever("Repository Applet","Repository Applet","[Name]='" + siebelhub.GetActiveApplet().GetName() + "'","",fields);
 siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields){
-    debugger;
+    //first, get the service instance
+    // of course you need to import (from sif),
+    // register (ClientBusinessServiceN applet user prop ya know)
+    // and compile (BS and Application) first
     var service = SiebelApp.S_App.GetService("Siebel Hub Service");
+    //some property sets
     var iPS = SiebelApp.S_App.NewPropertySet();
     var oPS;
     var fPS = SiebelApp.S_App.NewPropertySet();
+    //prepare input PS
     iPS.SetProperty("Business Object", busobj);
     iPS.SetProperty("Business Component", buscomp);
     iPS.SetProperty("Search Specification", searchspec);
     iPS.SetProperty("Sort Specification", sortspec);
+    //field list must be passed as child PS
     for (field in fields){
        fPS.SetProperty(field,"");
     }
     iPS.AddChild(fPS);
+    //invoke the service method, this executes a query, so watch your search and sort specs!
     oPS = service.InvokeMethod("GetData", iPS);
+    //hooray, we've got data:
     return oPS.GetChildByType("ResultSet");
 };
 /*
@@ -432,7 +443,7 @@ siebelhub.ValidateContext = function(object){
         }
     }
     catch(e){
-        siebelhub.ErrorHandler(e);
+        siebelhub.ErrorHandler(e.toString() + "siebelhub.js:ValidateContext");
     }
     return pm;
 };
@@ -480,12 +491,106 @@ siebelhub.HelloWorld = function (msg) {
  */
 SiebelApp.EventManager.addListner("postload", SiebelHubPL);
 function SiebelHubPL(){
-    SiebelJS.Log("siebelhub.js: Running SiebelHubPL postload event listner...");
+    SiebelJS.Log(shMsg["SH_PL"]);
     //let's call a few cool siebelhub methods:
     siebelhub.AlignViewToTop(true);
     siebelhub.MakeAppletCollapsible("ALL");
+    //the Siebel Hub Tramp Stamp, show that we are here.
+    var stamp = siebelhub.CreateSiebelHubTrampStamp(true);
+    if ($(".siebelhub_trampstamp").length == 0){
+        $("#_swecontent").append(stamp);
+    }
+
 }
 
+/*
+Function CreateSiebelHubTrampStamp: Generates the 'Tramp Stamp'
+Requires CSS! See the GitHub repo for CSS example file
+ */
+siebelhub.CreateSiebelHubTrampStamp = function(options){
+    var stamp = siebelhub.GenerateDOMElement("div", {
+        class:"siebelhub_trampstamp",
+        title:shMsg["SH_STAMP"]
+    });
+
+    stamp.click(function() {
+        var dlg = siebelhub.GenerateDOMElement("div");
+        dlg.html(shMsg["SH_DET_BODY"]);
+        dlg.dialog({
+            buttons: [
+                {
+                    text: shMsg["DIAG_BTN"],
+                    click: function() {
+                        siebelhub.SelfDiagnostics({display:"textarea"});
+                    }
+                },
+                {
+                    text: shMsg["CLOSE"],
+                    click: function() {
+                        $("#selfdiag_output").remove();
+                        $(this).dialog("destroy");
+                    }
+                }
+             ],
+            width: 600,
+            modal: true,
+            dialogClass: "siebelhub_details",
+            title:shMsg["SH_DET_TITLE"]
+        });
+    });
+    return stamp;
+};
+
+siebelhub.SelfDiagnostics = function(options){
+    debugger;
+    var display = options.display;
+    var out;
+    //var selfdiag;
+    if ($("#selfdiag_output").length == 0 && display == "textarea"){
+        out = siebelhub.GenerateDOMElement("textarea",{id:"selfdiag_output"});
+        $(".siebelhub_details").append(out);
+    }
+    function selfdiag(msg) {
+        msg = Date.now() + " | " + msg;
+        console.log(msg);
+        if (display == "textarea"){
+            out.text(out.text() + "\n" + msg);
+        }
+    }
+    selfdiag(shMsg["DIAG_START"]);
+    //now run diagnostics
+    //check environment
+    selfdiag(shMsg["DIAG_BUILD"] + SIEBEL_BUILD.split("/")[0]);
+    //check 'GetActive' methods
+    selfdiag(shMsg["DIAG_VIEW"] + SiebelApp.S_App.GetActiveView().GetName());
+    selfdiag(shMsg["DIAG_APPLET"] + siebelhub.GetActiveApplet().GetName());
+    selfdiag(shMsg["DIAG_PM"] + siebelhub.GetActivePM().GetPMName());
+    selfdiag(shMsg["DIAG_PR"] + typeof(siebelhub.GetActivePR().ShowUI));
+
+    //check other functions
+    selfdiag(shMsg["DIAG_ATYPE"] + siebelhub.GetAppletType(siebelhub.GetActivePM()));
+
+    //check DataRetriever
+    //lookup SADMIN's ROW_ID and take query time as we go
+    try{
+        var time_elapsed;
+        var ts_start = Date.now();
+        var row_id = siebelhub.DataRetriever("Employee","Employee","[Login Name]='SADMIN'","",{"Id":""}).GetChild(0).GetProperty("Id");
+        var ts_end = Date.now();
+        if (row_id == "0-1"){
+            time_elapsed = ts_end - ts_start;
+            selfdiag(shMsg["DIAG_DR_1"] + time_elapsed + shMsg["DIAG_DR_2"]);
+        }
+        else(shMsg["DIAG_FAIL_DR"])
+    }
+    catch(e){
+        selfdiag(shMsg["DIAG_FAIL"] + e.toString());
+    }
+
+    //check GetRecordSet
+    selfdiag(shMsg["DIAG_RS"] + siebelhub.GetRecordSet(true).length);
+
+};
 /*
  Fun-ctions
  */
@@ -501,11 +606,37 @@ var shMsg = [];
 shMsg["HELLO"]          = "Hello";
 shMsg["HELLO_WORLD"]    = "Hello World";
 shMsg["OK"]             = "OK";
+shMsg["CLOSE"]          = "Close";
 shMsg["ERROR_DLG_TITLE"]= "whoopsy-daisy..."
 shMsg["NOPM_1"]         = "This function requires valid context (Applet, PM or PR).";
 shMsg["NOCTRL_1"]       = "This function requires a valid control reference.";
 shMsg["NOBC_1"]         = "Current applet does not use the BC provided";
 shMsg["TYPE_UNKNOWN"]   = "It's a Bingo!";
+shMsg["SH_PL"]          = "siebelhub.js: Running SiebelHubPL postload event listner...";
+shMsg["SH_STAMP"]       = "The Siebel Hub JavaScript Library for Siebel Open UI is available. Click for details."
+shMsg["SH_DET_TITLE"]   = "About the Siebel Hub Library";
+shMsg["SH_DET_BODY"]    = "<p>The <a href='https://github.com/siebelhub/siebelhub.js' target='_blank'>Siebel Hub (siebelhub.js) library</a> is an educational example how to create a reusable custom JavaScript library for Siebel Open UI" +
+                          "<p>This is an initiative of the <a href='http://siebelhub.com' target='_blank'>Siebel Hub</a>, the authoritative Siebel community site." +
+                          "<hr><h3>Options</h3>" +
+                          "<ul><li><a href='https://github.com/siebelhub/siebelhub.js' target='_blank'>Download and Contribute to the siebelhub.js library on GitHub</a></li>" +
+                          "<li></li><a href='http://siebelhub.com' target='_blank'>Visit the Siebel Hub</a>" +
+                          "</ul>" +
+                          "<blockquote>Please note that the siebelhub.js library is of an educational, phenomenal, inspirational, completely unsupported (epic) nature." +
+                          "Usage of the library for any other than recreational purpose is at your own peril.</blockquote>" +
+                          "<hr><p align='right'>&#9400;&nbsp;2015</p>";
+shMsg["DIAG_BTN"]       = "Run Self Diagnostics";
+shMsg["DIAG_START"]     = "Running siebelhub.js self-diagnostics...";
+shMsg["DIAG_BUILD"]     = "Siebel Build: ";
+shMsg["DIAG_VIEW"]      = "Active View: ";
+shMsg["DIAG_APPLET"]    = "Active Applet: ";
+shMsg["DIAG_PM"]        = "Active PM: ";
+shMsg["DIAG_PR"]        = "Active PR: ";
+shMsg["DIAG_ATYPE"]     = "Type of active applet: ";
+shMsg["DIAG_DR_1"]      = "DataRetriever found SADMIN in ";
+shMsg["DIAG_DR_2"]      = " milliseconds";
+shMsg["DIAG_FAIL"]      = "!!!FAIL: ";
+shMsg["DIAG_FAIL_DR"]   = "DataRetriever out of order."
+shMsg["DIAG_RS"]        = "Current size of record set: "
 
 //these might not need translation since they are more like Constance ;-)
 shMsg["TYPE_LIST"]      = "list";
