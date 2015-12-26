@@ -20,5 +20,12 @@
 .siebelhub_details a{
     color: blue!important;
     text-decoration: underline;
+    cursor: pointer;
 }
+#selfdiag_output{
+    width: 592px;
+    height: 150px;
+    overflow-y: scroll;
+}
+
 
