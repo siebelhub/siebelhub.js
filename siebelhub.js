@@ -34,6 +34,7 @@
  22-DEC-2015    v1.1    ahansal     added GetActivePR method
  24-DEC-2015    v1.2    ahansal     added DataRetriever method (requires Siebel Hub Service BS)
  26-DEC-2015    v1.3    ahansal     added 'Tramp Stamp' and SelfDiagnostics
+ 27-DEC-2015    v1.3    ahansal     several fixes, mostly cosmetic
 
  TODO:
  optimize siebelhub.js for list applets
@@ -80,13 +81,14 @@ siebelhub.SetControlValue = function (context,control,value){
  Returns: current value
  */
 siebelhub.GetControlValue = function (context,control){
+    var value = null;
     //get the PM
     var pm = siebelhub.ValidateContext(context);
     if (pm){
         //now get the field value
-        var value = pm.ExecuteMethod("GetFieldValue", control);
-        return value;
+        value = pm.ExecuteMethod("GetFieldValue", control);
     }
+    return value;
 };
 
 /*
@@ -564,8 +566,8 @@ siebelhub.SelfDiagnostics = function(options){
     //check 'GetActive' methods
     selfdiag(shMsg["DIAG_VIEW"] + SiebelApp.S_App.GetActiveView().GetName());
     selfdiag(shMsg["DIAG_APPLET"] + siebelhub.GetActiveApplet().GetName());
-    selfdiag(shMsg["DIAG_PM"] + siebelhub.GetActivePM().GetPMName());
-    selfdiag(shMsg["DIAG_PR"] + typeof(siebelhub.GetActivePR().ShowUI));
+    selfdiag(shMsg["DIAG_PM"] + siebelhub.GetActivePM().constructor.name);
+    selfdiag(shMsg["DIAG_PR"] + siebelhub.GetActivePR().constructor.name);
 
     //check other functions
     selfdiag(shMsg["DIAG_ATYPE"] + siebelhub.GetAppletType(siebelhub.GetActivePM()));
@@ -581,10 +583,12 @@ siebelhub.SelfDiagnostics = function(options){
             time_elapsed = ts_end - ts_start;
             selfdiag(shMsg["DIAG_DR_1"] + time_elapsed + shMsg["DIAG_DR_2"]);
         }
-        else(shMsg["DIAG_FAIL_DR"])
+        else{
+            throw(shMsg["DIAG_FAIL_DR"]);
+        }
     }
     catch(e){
-        selfdiag(shMsg["DIAG_FAIL"] + e.toString());
+        selfdiag(e.toString());
     }
 
     //check GetRecordSet
@@ -603,17 +607,18 @@ siebelhub.GoToTheHub = function(){
  For a localized version, copy this file to a language directory and translate the array values below
  */
 var shMsg = [];
+shMsg["CUR_YEAR"]       = new Date().getFullYear();
 shMsg["HELLO"]          = "Hello";
 shMsg["HELLO_WORLD"]    = "Hello World";
 shMsg["OK"]             = "OK";
 shMsg["CLOSE"]          = "Close";
-shMsg["ERROR_DLG_TITLE"]= "whoopsy-daisy..."
+shMsg["ERROR_DLG_TITLE"]= "whoopsy-daisy...";
 shMsg["NOPM_1"]         = "This function requires valid context (Applet, PM or PR).";
 shMsg["NOCTRL_1"]       = "This function requires a valid control reference.";
 shMsg["NOBC_1"]         = "Current applet does not use the BC provided";
 shMsg["TYPE_UNKNOWN"]   = "It's a Bingo!";
 shMsg["SH_PL"]          = "siebelhub.js: Running SiebelHubPL postload event listner...";
-shMsg["SH_STAMP"]       = "The Siebel Hub JavaScript Library for Siebel Open UI is available. Click for details."
+shMsg["SH_STAMP"]       = "The Siebel Hub JavaScript Library for Siebel Open UI is available. Click for details.";
 shMsg["SH_DET_TITLE"]   = "About the Siebel Hub Library";
 shMsg["SH_DET_BODY"]    = "<p>The <a href='https://github.com/siebelhub/siebelhub.js' target='_blank'>Siebel Hub (siebelhub.js) library</a> is an educational example how to create a reusable custom JavaScript library for Siebel Open UI" +
                           "<p>This is an initiative of the <a href='http://siebelhub.com' target='_blank'>Siebel Hub</a>, the authoritative Siebel community site." +
@@ -623,7 +628,7 @@ shMsg["SH_DET_BODY"]    = "<p>The <a href='https://github.com/siebelhub/siebelhu
                           "</ul>" +
                           "<blockquote>Please note that the siebelhub.js library is of an educational, phenomenal, inspirational, completely unsupported (epic) nature." +
                           "Usage of the library for any other than recreational purpose is at your own peril.</blockquote>" +
-                          "<hr><p align='right'>&#9400;&nbsp;2015</p>";
+                          "<hr><span id='siebelhub_detail_footer'><p align='right'>&#9400;&nbsp;2015 - " + shMsg["CUR_YEAR"] + "</p></span>";
 shMsg["DIAG_BTN"]       = "Run Self Diagnostics";
 shMsg["DIAG_START"]     = "Running siebelhub.js self-diagnostics...";
 shMsg["DIAG_BUILD"]     = "Siebel Build: ";
@@ -635,8 +640,8 @@ shMsg["DIAG_ATYPE"]     = "Type of active applet: ";
 shMsg["DIAG_DR_1"]      = "DataRetriever found SADMIN in ";
 shMsg["DIAG_DR_2"]      = " milliseconds";
 shMsg["DIAG_FAIL"]      = "!!!FAIL: ";
-shMsg["DIAG_FAIL_DR"]   = "DataRetriever out of order."
-shMsg["DIAG_RS"]        = "Current size of record set: "
+shMsg["DIAG_FAIL_DR"]   = "DataRetriever out of order.";
+shMsg["DIAG_RS"]        = "Current size of record set: ";
 
 //these might not need translation since they are more like Constance ;-)
 shMsg["TYPE_LIST"]      = "list";
