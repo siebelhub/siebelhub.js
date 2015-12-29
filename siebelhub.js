@@ -3,10 +3,15 @@
  Author(s):     alex@siebelhub.com
  Date:          Dec 2015
  Description:   Educational/Phenomenal/Inspirational/Comprehensive (EPIC) JavaScript library for Siebel Open UI.
+ GitHub:        https://github.com/siebelhub/siebelhub.js
+
  See individual functions for details.
  For localization options, scroll down.
- Installation:  Copy this file to siebel/custom folder and
- register in the Manifest using Application/Common
+
+ Installation:  Copy this file to siebel/custom folder and register in the Manifest using Application/Common
+                Copy content of siebelhub.css to a custom style or register it as new custom style sheet
+                Import BS_Siebel_Hub_Service.sif and compile
+                Add Siebel Hub Service to your application(s) using ClientBusinessServiceN user prop and compile
 
  for(i=should,i=understand,i=read)
  {
@@ -35,16 +40,20 @@
  24-DEC-2015    v1.2    ahansal     added DataRetriever method (requires Siebel Hub Service BS)
  26-DEC-2015    v1.3    ahansal     added 'Tramp Stamp' and SelfDiagnostics
  27-DEC-2015    v1.3    ahansal     several fixes, mostly cosmetic
-
+ 27-DEC-2015    v1.4    ahansal     verified use cases, enhanced installation notes
+ 29-DEC-2015    v1.4    ahansal     added GetAppletElem and GetLabelElem methods
  TODO:
  optimize siebelhub.js for list applets
  check for PW compatibility
- Get Applet DOM element
  conditional formatting
- Get Label DOM elem for a control / column header DOM elem for a list column
  use cases in GitHub Wiki
  document on Siebel Hub
  cross browser testing
+ Get number of populated/empty controls/cells for an applet (use case: progress bar)
+ DataRetriever should be able to return the fields object with values (for each record)
+ add timer to DataRetriever (move from SelfDiagnostics)
+ Siebel Version check (using SIEBEL_BUILD or Upgrade Database Version BC)
+ enable drag and drop in list (like collapsible)
  *******************************************************************/
 
 siebelhub = function(){ //not sure if we ever need this
@@ -197,7 +206,52 @@ siebelhub.GetActiveApplet = function(){
     return activeApplet;
 };
 
+/*
+ Function GetLabelElem: Gets a DOM element for a label/column header
+ Inputs: applet object, PM or PR and control object
+ Returns: label/column header DOM element
+ */
+siebelhub.GetLabelElem = function(context,control){
+    //get the PM
+    var pm = siebelhub.ValidateContext(context);
+    var labelElem = null;
+    var appletType = null;
+    if(pm){
+        appletType = siebelhub.GetAppletType(pm);
+        switch (appletType){
+            case shMsg["TYPE_LIST"]:
+                var appletPH = pm.Get("GetPlaceholder");
+                var fieldName = control.GetFieldName();
+                labelElem = $("th#" + appletPH + "_" + fieldName);
+                break;
+            case shMsg["TYPE_FORM"]:
+                var controlElem = $("[name='"+ control.GetInputName() + "']");
+                var labelId = controlElem.attr("aria-labelledby");
+                labelElem = $("span#" + labelId);
+                break;
+            default: break;
+        }
+        var appletPH = pm.Get("GetPlaceholder");
+    }
+    return labelElem;
+};
 
+
+/*
+ Function GetAppletElem: Gets a DOM element for an applet
+ Inputs: applet object, PM or PR
+ Returns: applet DOM element
+ */
+siebelhub.GetAppletElem = function(context){
+    //get the PM
+    var pm = siebelhub.ValidateContext(context);
+    var appletElem = null;
+    if(pm){
+        var appletElemId = pm.Get("GetFullId");
+        appletElem = $("#" + shMsg["AP_PREFIX"] +  appletElemId + shMsg["AP_POSTFIX"]);
+    }
+    return appletElem;
+};
 
 /*
  Function GetControlElemByLabel: Gets a control DOM element using the label text
@@ -249,6 +303,8 @@ siebelhub.GetControlObjByLabel = function(context,label){
 //use case 1: Get some info on the active applet from the repository
 // var fields = {"Name":"","Business Component":"","Comments":""};
 // siebelhub.DataRetriever("Repository Applet","Repository Applet","[Name]='" + siebelhub.GetActiveApplet().GetName() + "'","",fields);
+// use case 2: Get info about a BC field
+// siebelhub.DataRetriever("Repository Details","Repository Field","[Name]='First Name' AND [Parent Name]='Contact'","",{"Join":"","Column":"","Comments":""})
 siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields){
     //first, get the service instance
     // of course you need to import (from sif),
@@ -607,7 +663,7 @@ siebelhub.GoToTheHub = function(){
  For a localized version, copy this file to a language directory and translate the array values below
  */
 var shMsg = [];
-shMsg["CUR_YEAR"]       = new Date().getFullYear();
+shMsg["CUR_YEAR"]       = new Date().getFullYear();  //don't translate this ;-)
 shMsg["HELLO"]          = "Hello";
 shMsg["HELLO_WORLD"]    = "Hello World";
 shMsg["OK"]             = "OK";
@@ -648,3 +704,5 @@ shMsg["TYPE_LIST"]      = "list";
 shMsg["TYPE_FORM"]      = "form";
 shMsg["TYPE_CHART"]     = "chart";
 shMsg["TYPE_TREE"]      = "tree";
+shMsg["AP_PREFIX"]      = "s_";
+shMsg["AP_POSTFIX"]     = "_div";
