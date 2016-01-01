@@ -42,6 +42,9 @@
  27-DEC-2015    v1.3    ahansal     several fixes, mostly cosmetic
  27-DEC-2015    v1.4    ahansal     verified use cases, enhanced installation notes
  29-DEC-2015    v1.4    ahansal     added GetAppletElem and GetLabelElem methods
+ 01-JAN-2016    v1.5    ahansal     added SIEBEL_BUILD exploit ;-); enhanced timer for DataRetriever
+ 01-JAN-2016    v1.5    ahansal     enhanced DataRetriever with output option and added ps2json method
+
  TODO:
  optimize siebelhub.js for list applets
  check for PW compatibility
@@ -50,10 +53,7 @@
  document on Siebel Hub
  cross browser testing
  Get number of populated/empty controls/cells for an applet (use case: progress bar)
- DataRetriever should be able to return the fields object with values (for each record)
- add timer to DataRetriever (move from SelfDiagnostics)
- Siebel Version check (using SIEBEL_BUILD or Upgrade Database Version BC)
- enable drag and drop in list (like collapsible)
+ enable drag and drop in list programmatically (like collapsible)
  *******************************************************************/
 
 siebelhub = function(){ //not sure if we ever need this
@@ -302,10 +302,23 @@ siebelhub.GetControlObjByLabel = function(context,label){
  */
 //use case 1: Get some info on the active applet from the repository
 // var fields = {"Name":"","Business Component":"","Comments":""};
-// siebelhub.DataRetriever("Repository Applet","Repository Applet","[Name]='" + siebelhub.GetActiveApplet().GetName() + "'","",fields);
+// siebelhub.DataRetriever("Repository Applet","Repository Applet","[Name]='" + siebelhub.GetActiveApplet().GetName() + "'","",fields,{"output":"JSON"});
 // use case 2: Get info about a BC field
 // siebelhub.DataRetriever("Repository Details","Repository Field","[Name]='First Name' AND [Parent Name]='Contact'","",{"Join":"","Column":"","Comments":""})
-siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields){
+siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,options){
+    //Timer
+    var ts_start;
+    var ts_end;
+debugger;
+    var output = null;
+    //check for options
+    if (options){
+        output = options.output.toLowerCase();
+        if (output != "json" && output != "propset"){
+            output = "propset";
+        }
+    }
+    var resultset = null;
     //first, get the service instance
     // of course you need to import (from sif),
     // register (ClientBusinessServiceN applet user prop ya know)
@@ -326,9 +339,51 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields){
     }
     iPS.AddChild(fPS);
     //invoke the service method, this executes a query, so watch your search and sort specs!
+    ts_start = Date.now();
     oPS = service.InvokeMethod("GetData", iPS);
+    ts_end = Date.now();
     //hooray, we've got data:
-    return oPS.GetChildByType("ResultSet");
+    resultset = oPS.GetChildByType("ResultSet");
+    if (resultset){
+        resultset.SetProperty("Time Elapsed",ts_end - ts_start );
+    }
+    switch (output){
+        case "propset": break;
+        case "json" : resultset = siebelhub.ps2json(resultset);
+                      break;
+        default: break;
+    }
+    return resultset;
+};
+
+/*
+Function ps2json: converts a property set to JSON
+ */
+siebelhub.ps2json = function(ps){
+    var json = {"ResultSet":{},"childArray":{}};
+    var data = {};
+    var key;
+    var val;
+    var type;
+    debugger;
+    key = ps.GetFirstProperty();
+
+    do{
+        val = ps.GetProperty(key);
+        json["ResultSet"][key] = val;
+    }while(key = ps.GetNextProperty());
+
+    for (var i = 0; i < ps.GetChildCount(); i++){
+        var child = ps.GetChild(i);
+        type = child.GetType();
+        key = child.GetFirstProperty();
+        do{
+            val = child.GetProperty(key);
+            data[key] = val;
+        }while(key = child.GetNextProperty());
+        json["childArray"][type] = data;
+    }
+    return json;
 };
 /*
  Function MakeAppletCollapsible: overrides the defaultAppletDisplayMode property
@@ -599,6 +654,9 @@ siebelhub.CreateSiebelHubTrampStamp = function(options){
     return stamp;
 };
 
+/*
+Function SelfDiagnostics: retrieves and displays feedback on environment and siebelhub.js functionality
+ */
 siebelhub.SelfDiagnostics = function(options){
     debugger;
     var display = options.display;
@@ -618,7 +676,7 @@ siebelhub.SelfDiagnostics = function(options){
     selfdiag(shMsg["DIAG_START"]);
     //now run diagnostics
     //check environment
-    selfdiag(shMsg["DIAG_BUILD"] + SIEBEL_BUILD.split("/")[0]);
+    selfdiag(shMsg["DIAG_BUILD"] + shMsg["SIEBEL_BUILD"] + " (" + shMsg["INNO_PACK"] + " " + shMsg["SIEBEL_IP"] + ")");
     //check 'GetActive' methods
     selfdiag(shMsg["DIAG_VIEW"] + SiebelApp.S_App.GetActiveView().GetName());
     selfdiag(shMsg["DIAG_APPLET"] + siebelhub.GetActiveApplet().GetName());
@@ -631,12 +689,10 @@ siebelhub.SelfDiagnostics = function(options){
     //check DataRetriever
     //lookup SADMIN's ROW_ID and take query time as we go
     try{
-        var time_elapsed;
-        var ts_start = Date.now();
-        var row_id = siebelhub.DataRetriever("Employee","Employee","[Login Name]='SADMIN'","",{"Id":""}).GetChild(0).GetProperty("Id");
-        var ts_end = Date.now();
+        var resultset = siebelhub.DataRetriever("Employee","Employee","[Login Name]='SADMIN'","",{"Id":""});
+        var row_id = resultset.GetChild(0).GetProperty("Id");
         if (row_id == "0-1"){
-            time_elapsed = ts_end - ts_start;
+            var time_elapsed = resultset.GetProperty("Time Elapsed");
             selfdiag(shMsg["DIAG_DR_1"] + time_elapsed + shMsg["DIAG_DR_2"]);
         }
         else{
@@ -663,7 +719,7 @@ siebelhub.GoToTheHub = function(){
  For a localized version, copy this file to a language directory and translate the array values below
  */
 var shMsg = [];
-shMsg["CUR_YEAR"]       = new Date().getFullYear();  //don't translate this ;-)
+
 shMsg["HELLO"]          = "Hello";
 shMsg["HELLO_WORLD"]    = "Hello World";
 shMsg["OK"]             = "OK";
@@ -676,6 +732,7 @@ shMsg["TYPE_UNKNOWN"]   = "It's a Bingo!";
 shMsg["SH_PL"]          = "siebelhub.js: Running SiebelHubPL postload event listner...";
 shMsg["SH_STAMP"]       = "The Siebel Hub JavaScript Library for Siebel Open UI is available. Click for details.";
 shMsg["SH_DET_TITLE"]   = "About the Siebel Hub Library";
+shMsg["CUR_YEAR"]       = new Date().getFullYear();  //don't translate this ;-)
 shMsg["SH_DET_BODY"]    = "<p>The <a href='https://github.com/siebelhub/siebelhub.js' target='_blank'>Siebel Hub (siebelhub.js) library</a> is an educational example how to create a reusable custom JavaScript library for Siebel Open UI" +
                           "<p>This is an initiative of the <a href='http://siebelhub.com' target='_blank'>Siebel Hub</a>, the authoritative Siebel community site." +
                           "<hr><h3>Options</h3>" +
@@ -706,3 +763,9 @@ shMsg["TYPE_CHART"]     = "chart";
 shMsg["TYPE_TREE"]      = "tree";
 shMsg["AP_PREFIX"]      = "s_";
 shMsg["AP_POSTFIX"]     = "_div";
+shMsg["SIEBEL_BUILD"]   = SIEBEL_BUILD.split("/")[0];
+shMsg["SIEBEL_IP"]      = shMsg["SIEBEL_BUILD"] == "23030" ? "2013" : shMsg["SIEBEL_BUILD"] == "23044" ? "2014" : shMsg["SIEBEL_BUILD"] == "23048" ? "2015" : "Undefined";
+shMsg["INNO_PACK"]      = "IP";
+
+
+
