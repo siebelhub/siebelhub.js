@@ -44,6 +44,7 @@
  29-DEC-2015    v1.4    ahansal     added GetAppletElem and GetLabelElem methods
  01-JAN-2016    v1.5    ahansal     added SIEBEL_BUILD exploit ;-); enhanced timer for DataRetriever
  01-JAN-2016    v1.5    ahansal     enhanced DataRetriever with output option and added ps2json method
+ 02-JAN-2016    v1.5    ahansal     found a better way to get version number
 
  TODO:
  optimize siebelhub.js for list applets
@@ -309,7 +310,7 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
     //Timer
     var ts_start;
     var ts_end;
-debugger;
+
     var output = null;
     //check for options
     if (options){
@@ -348,7 +349,6 @@ debugger;
         resultset.SetProperty("Time Elapsed",ts_end - ts_start );
     }
     switch (output){
-        case "propset": break;
         case "json" : resultset = siebelhub.ps2json(resultset);
                       break;
         default: break;
@@ -365,14 +365,16 @@ siebelhub.ps2json = function(ps){
     var key;
     var val;
     var type;
-    debugger;
+    //take care of the parent PS
+    //iterate through properties and write to "ResultSet" object
     key = ps.GetFirstProperty();
-
     do{
         val = ps.GetProperty(key);
         json["ResultSet"][key] = val;
     }while(key = ps.GetNextProperty());
 
+    //take care of children
+    //iterate through child array and populate object
     for (var i = 0; i < ps.GetChildCount(); i++){
         var child = ps.GetChild(i);
         type = child.GetType();
@@ -381,8 +383,9 @@ siebelhub.ps2json = function(ps){
             val = child.GetProperty(key);
             data[key] = val;
         }while(key = child.GetNextProperty());
-        json["childArray"][type] = data;
+        json["childArray"][type ? type : i] = data;
     }
+    //all done (hopefully)
     return json;
 };
 /*
@@ -676,7 +679,7 @@ siebelhub.SelfDiagnostics = function(options){
     selfdiag(shMsg["DIAG_START"]);
     //now run diagnostics
     //check environment
-    selfdiag(shMsg["DIAG_BUILD"] + shMsg["SIEBEL_BUILD"] + " (" + shMsg["INNO_PACK"] + " " + shMsg["SIEBEL_IP"] + ")");
+    selfdiag(shMsg["DIAG_BUILD"] + SiebelApp.S_App.GetAppPropertySet().GetChildByType("api").GetProperty("vs"));
     //check 'GetActive' methods
     selfdiag(shMsg["DIAG_VIEW"] + SiebelApp.S_App.GetActiveView().GetName());
     selfdiag(shMsg["DIAG_APPLET"] + siebelhub.GetActiveApplet().GetName());
@@ -744,7 +747,7 @@ shMsg["SH_DET_BODY"]    = "<p>The <a href='https://github.com/siebelhub/siebelhu
                           "<hr><span id='siebelhub_detail_footer'><p align='right'>&#9400;&nbsp;2015 - " + shMsg["CUR_YEAR"] + "</p></span>";
 shMsg["DIAG_BTN"]       = "Run Self Diagnostics";
 shMsg["DIAG_START"]     = "Running siebelhub.js self-diagnostics...";
-shMsg["DIAG_BUILD"]     = "Siebel Build: ";
+shMsg["DIAG_BUILD"]     = "Siebel Version: ";
 shMsg["DIAG_VIEW"]      = "Active View: ";
 shMsg["DIAG_APPLET"]    = "Active Applet: ";
 shMsg["DIAG_PM"]        = "Active PM: ";
@@ -764,6 +767,7 @@ shMsg["TYPE_TREE"]      = "tree";
 shMsg["AP_PREFIX"]      = "s_";
 shMsg["AP_POSTFIX"]     = "_div";
 shMsg["SIEBEL_BUILD"]   = SIEBEL_BUILD.split("/")[0];
+shMsg["SIEBEL_VER"]     = SiebelApp.S_App.GetAppPropertySet().GetChildByType("api").GetProperty("vs");
 shMsg["SIEBEL_IP"]      = shMsg["SIEBEL_BUILD"] == "23030" ? "2013" : shMsg["SIEBEL_BUILD"] == "23044" ? "2014" : shMsg["SIEBEL_BUILD"] == "23048" ? "2015" : "Undefined";
 shMsg["INNO_PACK"]      = "IP";
 
