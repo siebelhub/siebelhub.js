@@ -45,16 +45,35 @@
  01-JAN-2016    v1.5    ahansal     added SIEBEL_BUILD exploit ;-); enhanced timer for DataRetriever
  01-JAN-2016    v1.5    ahansal     enhanced DataRetriever with output option and added ps2json method
  02-JAN-2016    v1.5    ahansal     found a better way to get version number
+ 03-JAN-2016    v1.5    ahansal     added Manifesto
+ 04-JAN-2016    v1.6    ahansal     enhanced ps2json method (recursive call, arbitrary PS support)
 
  TODO:
  optimize siebelhub.js for list applets
  check for PW compatibility
  conditional formatting
- use cases in GitHub Wiki
- document on Siebel Hub
- cross browser testing
+ use cases in GitHub Wiki (started)
+ document on Siebel Hub (started)
+ cross browser testing (currently testing on FF and Chrome)
  Get number of populated/empty controls/cells for an applet (use case: progress bar)
  enable drag and drop in list programmatically (like collapsible)
+ make applets resizable with user pref storage
+
+The siebelhub.js Manifesto
+
+siebelhub.js is an educational, phenomenal, inspirational, comprehensive (epic) JavaScript library for Siebel Open UI.
+Its main purpose is to serve as an example how to create a custom Siebel Open UI library of utility functions.
+siebelhub.js provides wrapper functions that allow Siebel Open UI developers to focus on implementing functionality rather than solving common problems.
+For example, instead of spending valuable productive time to figure out how to securely access the label/header for any given Applet Control or List Column,
+developers can use the siebelhub.GetLabelElem function. Another goal of siebelhub.js is to provide examples how to use generic code in Siebel Open UI.
+This means that the code should work in any 'context', be it called from a Presentation Model, Physical Renderer,
+Plug-in Wrapper, Event Listener or any other Open UI code file.
+Finally, code in siebelhub.js supports the principle of language independency by providing a simplistic way of keeping
+translatable strings separate from the code.
+
+siebelhub.js is open source and is provided 'as-is' without any liability or support. Being a purely educational exercise,
+ no parts of siebelhub.js are intended for use in production systems (however, we do hope it inspires you to write your own library).
+ The Siebel community is hereby invited to contribute, comment and improve the library on GitHub.
  *******************************************************************/
 
 siebelhub = function(){ //not sure if we ever need this
@@ -349,7 +368,7 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
         resultset.SetProperty("Time Elapsed",ts_end - ts_start );
     }
     switch (output){
-        case "json" : resultset = siebelhub.ps2json(resultset);
+        case "json" : resultset = siebelhub.ps2json({},resultset);
                       break;
         default: break;
     }
@@ -357,33 +376,39 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
 };
 
 /*
-Function ps2json: converts a property set to JSON
+Function ps2json: converts a property set to a JSON object
+Input: json object (e.g. {}), property set, counter (optional)
+Output: json object
  */
-siebelhub.ps2json = function(ps){
-    var json = {"ResultSet":{},"childArray":{}};
-    var data = {};
-    var key;
-    var val;
-    var type;
+siebelhub.ps2json = function(json,ps,counter){
+    var json = json;
+    var data = {};  //temp data set
+    var key; //property name
+    var val; //property value
+    var type; //propset type
+
+    var c = 0; //counter is needed when type of input ps is not set
+    if (counter){
+        c = counter;
+    }
     //take care of the parent PS
-    //iterate through properties and write to "ResultSet" object
+    //iterate through properties
+    type = ps.GetType() ? ps.GetType() : c;
     key = ps.GetFirstProperty();
     do{
-        val = ps.GetProperty(key);
-        json["ResultSet"][key] = val;
+         data[key] = ps.GetProperty(key);
     }while(key = ps.GetNextProperty());
-
+    json[type] = data;
+    json[type]["value"] = ps.GetValue();
+    //debugger;
     //take care of children
     //iterate through child array and populate object
+    if (!json["childArray"]){
+        json["childArray"] = {};
+    }
     for (var i = 0; i < ps.GetChildCount(); i++){
         var child = ps.GetChild(i);
-        type = child.GetType();
-        key = child.GetFirstProperty();
-        do{
-            val = child.GetProperty(key);
-            data[key] = val;
-        }while(key = child.GetNextProperty());
-        json["childArray"][type ? type : i] = data;
+        siebelhub.ps2json(json["childArray"],child,i+1);
     }
     //all done (hopefully)
     return json;
@@ -398,8 +423,8 @@ siebelhub.ps2json = function(ps){
 siebelhub.MakeAppletCollapsible = function(context,mode){
     switch (context){
         //magic keyword has been passed instead of context...
-        case "ALL":
         case "all":
+        case "ALL":
         case "All":
             //call self for all applets in view
             var activeView = SiebelApp.S_App.GetActiveView();
@@ -662,7 +687,7 @@ Function SelfDiagnostics: retrieves and displays feedback on environment and sie
  */
 siebelhub.SelfDiagnostics = function(options){
     debugger;
-    var display = options.display;
+    var display = options.display.toLowerCase();
     var out;
     //var selfdiag;
     if ($("#selfdiag_output").length == 0 && display == "textarea"){
@@ -670,7 +695,7 @@ siebelhub.SelfDiagnostics = function(options){
         $(".siebelhub_details").append(out);
     }
     function selfdiag(msg) {
-        msg = Date.now() + " | " + msg;
+        msg = Date.now() + " > " + msg;
         console.log(msg);
         if (display == "textarea"){
             out.text(out.text() + "\n" + msg);
