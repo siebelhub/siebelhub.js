@@ -47,6 +47,7 @@
  02-JAN-2016    v1.5    ahansal     found a better way to get version number
  03-JAN-2016    v1.5    ahansal     added Manifesto
  04-JAN-2016    v1.6    ahansal     enhanced ps2json method (recursive call, arbitrary PS support)
+ 05-JAN-2016    v1.6    ahansal     added MakeAppletResizable, GetUserPref, SetUserPref methods
 
  TODO:
  optimize siebelhub.js for list applets
@@ -57,7 +58,7 @@
  cross browser testing (currently testing on FF and Chrome)
  Get number of populated/empty controls/cells for an applet (use case: progress bar)
  enable drag and drop in list programmatically (like collapsible)
- make applets resizable with user pref storage
+
 
 The siebelhub.js Manifesto
 
@@ -421,11 +422,9 @@ siebelhub.ps2json = function(json,ps,counter){
  Kudos: Jan Peterson
  */
 siebelhub.MakeAppletCollapsible = function(context,mode){
-    switch (context){
+    switch (context.toString().toLowerCase()){
         //magic keyword has been passed instead of context...
         case "all":
-        case "ALL":
-        case "All":
             //call self for all applets in view
             var activeView = SiebelApp.S_App.GetActiveView();
             var appletmap = activeView.GetAppletMap();
@@ -456,6 +455,74 @@ siebelhub.MakeAppletCollapsible = function(context,mode){
             }
             break;
     }
+};
+/*
+ Function MakeAppletResizable: applies the jQuery resizable method to an applet
+ Inputs: applet object, PM or PR.
+ Special treat: input "ALL" calls self for each applet in active view
+ Retrieves and Saves applet size from/to user preferences
+ */
+siebelhub.MakeAppletResizable = function(context,resize){
+    debugger;
+    switch (context.toString().toLowerCase()){
+        //magic keyword has been passed instead of context...
+        case "all":
+            //call self for all applets in view
+            var activeView = SiebelApp.S_App.GetActiveView();
+            var appletmap = activeView.GetAppletMap();
+            for (applet in appletmap){
+                siebelhub.MakeAppletResizable(appletmap[applet],resize);
+            }
+            break;
+        default:
+            var pm = siebelhub.ValidateContext(context);
+            if (pm){
+                var appletElem = siebelhub.GetAppletElem(context);
+                var viewName = SiebelApp.S_App.GetActiveView().GetName();
+                var key = viewName + shMsg["A_SIZE"];
+                //try to retrieve user preference
+                var newSize = siebelhub.GetUserPref(context,key);
+                if (newSize && resize){
+                    appletElem.width(newSize.split("x")[0]);
+                    appletElem.height(newSize.split("x")[1]);
+                }
+                appletElem.resizable();
+                appletElem.on("resizestop", function (event,ui) {
+                    var size = ui.size.width + "x" + ui.size.height;
+                    siebelhub.SetUserPref(context,key,size);
+                });
+            }
+            break;
+    }
+};
+
+siebelhub.SetUserPref = function(context,key,value){
+    debugger;
+    var pm = siebelhub.ValidateContext(context);
+    var ret = null;
+    if (pm){
+        var prefPS = SiebelApp.S_App.NewPropertySet();
+        prefPS.SetProperty(shMsg["UP_KEY"],key);
+        prefPS.SetProperty(key,value);
+        pm.OnControlEvent(consts.get("PHYEVENT_INVOKE_CONTROL"), pm.Get(consts.get("SWE_MTHD_UPDATE_USER_PREF")), prefPS);
+        pm.SetProperty(key,value);
+        ret = true;
+    }
+    else{
+        ret = false;
+    }
+    return ret;
+};
+
+
+siebelhub.GetUserPref = function(context,key){
+    debugger;
+    var val = null;
+    var pm = siebelhub.ValidateContext(context);
+    if (pm){
+        val = pm.Get(key);
+    }
+    return val;
 };
 
 /*
@@ -636,6 +703,7 @@ function SiebelHubPL(){
     //let's call a few cool siebelhub methods:
     siebelhub.AlignViewToTop(true);
     siebelhub.MakeAppletCollapsible("ALL");
+    siebelhub.MakeAppletResizable("ALL",false);
     //the Siebel Hub Tramp Stamp, show that we are here.
     var stamp = siebelhub.CreateSiebelHubTrampStamp(true);
     if ($(".siebelhub_trampstamp").length == 0){
@@ -791,10 +859,9 @@ shMsg["TYPE_CHART"]     = "chart";
 shMsg["TYPE_TREE"]      = "tree";
 shMsg["AP_PREFIX"]      = "s_";
 shMsg["AP_POSTFIX"]     = "_div";
-shMsg["SIEBEL_BUILD"]   = SIEBEL_BUILD.split("/")[0];
-shMsg["SIEBEL_VER"]     = SiebelApp.S_App.GetAppPropertySet().GetChildByType("api").GetProperty("vs");
-shMsg["SIEBEL_IP"]      = shMsg["SIEBEL_BUILD"] == "23030" ? "2013" : shMsg["SIEBEL_BUILD"] == "23044" ? "2014" : shMsg["SIEBEL_BUILD"] == "23048" ? "2015" : "Undefined";
+//shMsg["SIEBEL_IP"]      = shMsg["SIEBEL_BUILD"] == "23030" ? "2013" : shMsg["SIEBEL_BUILD"] == "23044" ? "2014" : shMsg["SIEBEL_BUILD"] == "23048" ? "2015" : "Undefined";
 shMsg["INNO_PACK"]      = "IP";
-
-
-
+shMsg["A_SIZE"]         = "__size";
+shMsg["UP_KEY"]         = "Key";
+shMsg["SIEBEL_VER"]     = SiebelApp.S_App.GetAppPropertySet().GetChildByType("api").GetProperty("vs");
+shMsg["SIEBEL_BUILD"]   = SIEBEL_BUILD.split("/")[0];
