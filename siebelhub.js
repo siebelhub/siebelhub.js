@@ -130,10 +130,12 @@ siebelhub.GetFieldValue = function (field, context){
     var bcname = null;
     var pm = null;
     var value = null;
+    var field = field;
     //check for dot notation in field argument
     //if a dot is present, split into BC and field name
     //yes, this is risky since there are BCs and Fields that have a dot in the name
-    //we have to figure this out...
+    //TODO: we have to figure this out in a future version
+    //maybe replace the dot with another character would be easiest (but the dot is so cool :-(
     var tmp = field.split(".");
     if (tmp[1]){
         field = tmp[1];
@@ -180,9 +182,11 @@ siebelhub.GetFieldValue = function (field, context){
  Returns: array of applets found or null
  */
 siebelhub.GetAppletsByBCName = function (bcname){
+    //applet map is an array of all applets in current view
     var appletmap = SiebelApp.S_App.GetActiveView().GetAppletMap();
     var applets = [];
     for (applet in appletmap){
+        //all applets that use the BC go into the output array
         if (appletmap[applet].GetBusComp().GetName() == bcname){
             applets.push(appletmap[applet]);
         }
@@ -193,7 +197,8 @@ siebelhub.GetAppletsByBCName = function (bcname){
     else{
         return applets;
     }
-}
+};
+
 /*
  Function GetActivePM: Gets the PM of the active applet
  Inputs: nothing
@@ -241,18 +246,21 @@ siebelhub.GetLabelElem = function(context,control){
         appletType = siebelhub.GetAppletType(pm);
         switch (appletType){
             case shMsg["TYPE_LIST"]:
+                //in list applets, we can find the column header using th, placeholder and field name
                 var appletPH = pm.Get("GetPlaceholder");
                 var fieldName = control.GetFieldName();
                 labelElem = $("th#" + appletPH + "_" + fieldName);
                 break;
             case shMsg["TYPE_FORM"]:
+                //in form applets, we can use the GetInputName method
+                //this is backward compatible with IP 2013 or earlier
                 var controlElem = $("[name='"+ control.GetInputName() + "']");
+                //the id of the label element is 'hidden' in the control input element
                 var labelId = controlElem.attr("aria-labelledby");
                 labelElem = $("span#" + labelId);
                 break;
             default: break;
         }
-        var appletPH = pm.Get("GetPlaceholder");
     }
     return labelElem;
 };
@@ -269,6 +277,7 @@ siebelhub.GetAppletElem = function(context){
     var appletElem = null;
     if(pm){
         var appletElemId = pm.Get("GetFullId");
+        //we better use some constants, one never knows...
         appletElem = $("#" + shMsg["AP_PREFIX"] +  appletElemId + shMsg["AP_POSTFIX"]);
     }
     return appletElem;
@@ -284,10 +293,8 @@ siebelhub.GetControlElemByLabel = function(context,label){
     var pm = siebelhub.ValidateContext(context);
     var controlElem = null;
     if (pm){
-        //get the applet's full id
-        var appletElemId = pm.Get("GetFullId");
         //get the DOM element of the applet
-        var appletElem = $("#" + appletElemId);
+        var appletElem = siebelhub.GetAppletElem(pm);
         //find the control within the applet
         controlElem = $(appletElem).find("[aria-label='" + label + "']");
     }
@@ -341,7 +348,7 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
     }
     var resultset = null;
     //first, get the service instance
-    // of course you need to import (from sif),
+    // of course you need to import the Siebel Hub Service (from sif),
     // register (ClientBusinessServiceN applet user prop ya know)
     // and compile (BS and Application) first
     var service = SiebelApp.S_App.GetService("Siebel Hub Service");
@@ -367,11 +374,11 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
     resultset = oPS.GetChildByType("ResultSet");
     if (resultset){
         resultset.SetProperty("Time Elapsed",ts_end - ts_start );
-    }
-    switch (output){
-        case "json" : resultset = siebelhub.ps2json({},resultset);
-                      break;
-        default: break;
+        switch (output){
+            case "json" : resultset = siebelhub.ps2json({},resultset);
+                break;
+            default: break;
+        }
     }
     return resultset;
 };
@@ -401,14 +408,15 @@ siebelhub.ps2json = function(json,ps,counter){
     }while(key = ps.GetNextProperty());
     json[type] = data;
     json[type]["value"] = ps.GetValue();
-    //debugger;
     //take care of children
-    //iterate through child array and populate object
+    //create childArray object if it doesn't already exist
     if (!json["childArray"]){
         json["childArray"] = {};
     }
+    //iterate through child array and populate object
     for (var i = 0; i < ps.GetChildCount(); i++){
         var child = ps.GetChild(i);
+        //recursive call for each child
         siebelhub.ps2json(json["childArray"],child,i+1);
     }
     //all done (hopefully)
@@ -458,12 +466,11 @@ siebelhub.MakeAppletCollapsible = function(context,mode){
 };
 /*
  Function MakeAppletResizable: applies the jQuery resizable method to an applet
- Inputs: applet object, PM or PR.
+ Inputs: applet object, PM or PR, optional true or false to resize applet from stored user preference
  Special treat: input "ALL" calls self for each applet in active view
- Retrieves and Saves applet size from/to user preferences
+ Retrieves and saves applet size from/to user preferences
  */
 siebelhub.MakeAppletResizable = function(context,resize){
-    debugger;
     switch (context.toString().toLowerCase()){
         //magic keyword has been passed instead of context...
         case "all":
@@ -475,20 +482,26 @@ siebelhub.MakeAppletResizable = function(context,resize){
             }
             break;
         default:
+            //get pm
             var pm = siebelhub.ValidateContext(context);
             if (pm){
+                //some variables we will need
                 var appletElem = siebelhub.GetAppletElem(context);
                 var viewName = SiebelApp.S_App.GetActiveView().GetName();
                 var key = viewName + shMsg["A_SIZE"];
-                //try to retrieve user preference
+                //try to retrieve user preference from PM
                 var newSize = siebelhub.GetUserPref(context,key);
                 if (newSize && resize){
+                    //set applet size from stored values
                     appletElem.width(newSize.split("x")[0]);
                     appletElem.height(newSize.split("x")[1]);
                 }
+                //make applet resizable
                 appletElem.resizable();
+                //define what happens when user resizes the applet
                 appletElem.on("resizestop", function (event,ui) {
                     var size = ui.size.width + "x" + ui.size.height;
+                    //store new size in user preferences
                     siebelhub.SetUserPref(context,key,size);
                 });
             }
@@ -496,11 +509,17 @@ siebelhub.MakeAppletResizable = function(context,resize){
     }
 };
 
+/*
+Function SetUserPref: sets a user preference within a PM
+Input: PM,PR or Applet; name(key) of the UP; new value
+Output: returns true or false depending on success
+ */
 siebelhub.SetUserPref = function(context,key,value){
-    debugger;
+    //get PM
     var pm = siebelhub.ValidateContext(context);
     var ret = null;
     if (pm){
+        //do it by the book...
         var prefPS = SiebelApp.S_App.NewPropertySet();
         prefPS.SetProperty(shMsg["UP_KEY"],key);
         prefPS.SetProperty(key,value);
@@ -514,12 +533,17 @@ siebelhub.SetUserPref = function(context,key,value){
     return ret;
 };
 
-
+/*
+ Function GetUserPref: gets a user preference from a PM
+ Input: PM,PR or Applet; name(key) of the UP
+ Output: returns the value or null if not found
+ */
 siebelhub.GetUserPref = function(context,key){
-    debugger;
     var val = null;
+    //get the PM
     var pm = siebelhub.ValidateContext(context);
     if (pm){
+        //get the user preference
         val = pm.Get(key);
     }
     return val;
@@ -532,7 +556,7 @@ siebelhub.GetUserPref = function(context,key){
 siebelhub.AlignViewToTop = function(activateTopApplet){
     //scroll to top of view
     $("#_sweview").scrollTop(0);
-    if (activateTopApplet){ //try to 'click' the first applet
+    if (activateTopApplet){ //try to 'click' (activate) the first applet
         $("#_sweview").find(".siebui-applet").first().click();
     }
 };
@@ -754,7 +778,6 @@ siebelhub.CreateSiebelHubTrampStamp = function(options){
 Function SelfDiagnostics: retrieves and displays feedback on environment and siebelhub.js functionality
  */
 siebelhub.SelfDiagnostics = function(options){
-    debugger;
     var display = options.display.toLowerCase();
     var out;
     //var selfdiag;
@@ -859,9 +882,8 @@ shMsg["TYPE_CHART"]     = "chart";
 shMsg["TYPE_TREE"]      = "tree";
 shMsg["AP_PREFIX"]      = "s_";
 shMsg["AP_POSTFIX"]     = "_div";
-//shMsg["SIEBEL_IP"]      = shMsg["SIEBEL_BUILD"] == "23030" ? "2013" : shMsg["SIEBEL_BUILD"] == "23044" ? "2014" : shMsg["SIEBEL_BUILD"] == "23048" ? "2015" : "Undefined";
 shMsg["INNO_PACK"]      = "IP";
 shMsg["A_SIZE"]         = "__size";
 shMsg["UP_KEY"]         = "Key";
-shMsg["SIEBEL_VER"]     = SiebelApp.S_App.GetAppPropertySet().GetChildByType("api").GetProperty("vs");
+//shMsg["SIEBEL_VER"]     = SiebelApp.S_App.GetAppPropertySet().GetChildByType("api").GetProperty("vs");
 shMsg["SIEBEL_BUILD"]   = SIEBEL_BUILD.split("/")[0];
