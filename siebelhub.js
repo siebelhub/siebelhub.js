@@ -48,17 +48,21 @@
  03-JAN-2016    v1.5    ahansal     added Manifesto
  04-JAN-2016    v1.6    ahansal     enhanced ps2json method (recursive call, arbitrary PS support)
  05-JAN-2016    v1.6    ahansal     added MakeAppletResizable, GetUserPref, SetUserPref methods
+ 06-JAN-2016    v1.6    ahansal     minor updates and comments
+ 08-JAN-2016    v1.7    ahansal     Added GetFullRecordSet method and enhanced DataRetriever
 
  TODO:
  optimize siebelhub.js for list applets
  check for PW compatibility
- conditional formatting
  use cases in GitHub Wiki (started)
  document on Siebel Hub (started)
+ ebook documentation (wip)
  cross browser testing (currently testing on FF and Chrome)
  Get number of populated/empty controls/cells for an applet (use case: progress bar)
  enable drag and drop in list programmatically (like collapsible)
-
+ conditional formatting
+ GetRecordCount function (same as GetFullRecordSet)
+ SiebelHub PM for list applets (to get and update PM propset in Setup)
 
 The siebelhub.js Manifesto
 
@@ -73,8 +77,8 @@ Finally, code in siebelhub.js supports the principle of language independency by
 translatable strings separate from the code.
 
 siebelhub.js is open source and is provided 'as-is' without any liability or support. Being a purely educational exercise,
- no parts of siebelhub.js are intended for use in production systems (however, we do hope it inspires you to write your own library).
- The Siebel community is hereby invited to contribute, comment and improve the library on GitHub.
+no parts of siebelhub.js are intended for use in production systems (however, we do hope it inspires you to write your own library).
+The Siebel community is hereby invited to contribute, comment and improve the library on GitHub.
  *******************************************************************/
 
 siebelhub = function(){ //not sure if we ever need this
@@ -333,11 +337,13 @@ siebelhub.GetControlObjByLabel = function(context,label){
 // siebelhub.DataRetriever("Repository Applet","Repository Applet","[Name]='" + siebelhub.GetActiveApplet().GetName() + "'","",fields,{"output":"JSON"});
 // use case 2: Get info about a BC field
 // siebelhub.DataRetriever("Repository Details","Repository Field","[Name]='First Name' AND [Parent Name]='Contact'","",{"Join":"","Column":"","Comments":""})
+// use case 3: Run full query on Opportunities (no search spec);
+// siebelhub.DataRetriever("Opportunity","Opportunity","","",{"Name":""},{"output":"json"});
 siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,options){
     //Timer
     var ts_start;
     var ts_end;
-
+    var log = true;
     var output = null;
     //check for options
     if (options){
@@ -345,6 +351,7 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
         if (output != "json" && output != "propset"){
             output = "propset";
         }
+        log = options.log ? options.log : true;
     }
     var resultset = null;
     //first, get the service instance
@@ -372,17 +379,83 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
     ts_end = Date.now();
     //hooray, we've got data:
     resultset = oPS.GetChildByType("ResultSet");
+    var rc = resultset.GetProperty("Record Count");
+    var te = ts_end - ts_start;
     if (resultset){
-        resultset.SetProperty("Time Elapsed",ts_end - ts_start );
+        resultset.SetProperty("Time Elapsed",te);
         switch (output){
             case "json" : resultset = siebelhub.ps2json({},resultset);
                 break;
             default: break;
         }
     }
+    if (log){
+        if (busobj == ""){
+            busobj = SiebelApp.S_App.GetActiveBusObj().GetName();
+        }
+        console.log(shMsg["DR_LOG_HDR"]);
+        console.log(shMsg["DR_LOG_BO"] + busobj);
+        console.log(shMsg["DR_LOG_BC"] + buscomp);
+        console.log(shMsg["DR_LOG_SRCH"] + searchspec);
+        console.log(shMsg["DR_LOG_SORT"] + sortspec);
+        console.log(shMsg["DR_LOG_TIME"] + parseInt(te) + shMsg["DIAG_DR_2"]);
+        console.log(shMsg["DR_LOG_COUNT"] + rc);
+    }
     return resultset;
 };
+/*Function GetFullRecordSet: retrieves complete record set for an applet/BC
+  Record set will be based on current search and sort spec. Field list is the same as of
+  raw record set.
+  Input: context (optional), ie PM, PR  or Applet instance
+  Output: record set as array of objects (similar to GetRecordSet)
+ */
+siebelhub.GetFullRecordSet = function(context){
+    debugger;
+    var bc;
+    var bcName;
+    var applet = null;
+    var rs = new Array();
+    var i = 0;
+    var boName = SiebelApp.S_App.GetActiveBusObj().GetName();
+    if (context){
+        var pm = siebelhub.ValidateContext(context);
+    }
+    if (pm){
+        var appletName = pm.GetObjName();
+        var activeView = SiebelApp.S_App.GetActiveView();
+        var appletmap = activeView.GetAppletMap();
+        for (a in appletmap){
+            if (a == appletName){
+                applet = appletmap[a];
+            }
+        }
+    }
+    else{
+        applet = siebelhub.GetActiveApplet();
+    }
 
+    var bc = applet.GetBusComp();
+    var bcName = bc.GetName();
+    var searchspec = bc.GetSearchSpec() ? bc.GetSearchSpec() : "";
+    var sortspec = bc.GetSortSpec() ? bc.GetSortSpec() : "";
+    var rs_temp = siebelhub.GetRecordSet(true)[0];
+    var fields = {};
+    var result = null;
+    for (field in rs_temp){
+        fields[field] = "";
+    }
+    if (bcName != boName){  //query on child BC using active BO
+        boName = "";
+    }
+    result = siebelhub.DataRetriever(boName,bcName,searchspec,sortspec,fields,{"output":"json","log": true});
+    for (record in result.childArray){
+            if (record != "childArray"){
+            rs[i] = result.childArray[record];
+            i++;
+            }
+    }
+    return rs;
+};
 /*
 Function ps2json: converts a property set to a JSON object
 Input: json object (e.g. {}), property set, counter (optional)
@@ -874,6 +947,13 @@ shMsg["DIAG_DR_2"]      = " milliseconds";
 shMsg["DIAG_FAIL"]      = "!!!FAIL: ";
 shMsg["DIAG_FAIL_DR"]   = "DataRetriever out of order.";
 shMsg["DIAG_RS"]        = "Current size of record set: ";
+shMsg["DR_LOG_HDR"]     = "siebelhub.DataRetriever Log: ";
+shMsg["DR_LOG_BO"]      = "Business Object: ";
+shMsg["DR_LOG_BC"]      = "Business Component: ";
+shMsg["DR_LOG_SRCH"]    = "Search Specification: ";
+shMsg["DR_LOG_SORT"]    = "Sort Specification: ";
+shMsg["DR_LOG_TIME"]    = "Time Elapsed: ";
+shMsg["DR_LOG_COUNT"]   = "Record Count: ";
 
 //these might not need translation since they are more like Constance ;-)
 shMsg["TYPE_LIST"]      = "list";
