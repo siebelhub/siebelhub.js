@@ -50,6 +50,7 @@
  05-JAN-2016    v1.6    ahansal     added MakeAppletResizable, GetUserPref, SetUserPref methods
  06-JAN-2016    v1.6    ahansal     minor updates and comments
  08-JAN-2016    v1.7    ahansal     Added GetFullRecordSet method and enhanced DataRetriever
+ 09-JAN-2016    v1.7    ahansal     Continued work on GetFullRecordSet
 
  TODO:
  optimize siebelhub.js for list applets
@@ -341,9 +342,11 @@ siebelhub.GetControlObjByLabel = function(context,label){
 // siebelhub.DataRetriever("Opportunity","Opportunity","","",{"Name":""},{"output":"json"});
 siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,options){
     //Timer
+    //View Modes: SalesRepView,ManagerView,PersonalView,AllView,OrganizationView,GroupView,CatalogView,SubOrganizationView
     var ts_start;
     var ts_end;
     var log = true;
+    var viewmode = viewmodes.indexOf("OrganizationView");
     var output = null;
     //check for options
     if (options){
@@ -352,6 +355,7 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
             output = "propset";
         }
         log = options.log ? options.log : true;
+        viewmode = options.viewmode ? options.viewmode : viewmodes.indexOf("OrganizationView");
     }
     var resultset = null;
     //first, get the service instance
@@ -368,6 +372,7 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
     iPS.SetProperty("Business Component", buscomp);
     iPS.SetProperty("Search Specification", searchspec);
     iPS.SetProperty("Sort Specification", sortspec);
+    iPS.SetProperty("View Mode", viewmode);
     //field list must be passed as child PS
     for (field in fields){
        fPS.SetProperty(field,"");
@@ -379,7 +384,7 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
     ts_end = Date.now();
     //hooray, we've got data:
     resultset = oPS.GetChildByType("ResultSet");
-    var rc = resultset.GetProperty("Record Count");
+    var temp = resultset.Clone();
     var te = ts_end - ts_start;
     if (resultset){
         resultset.SetProperty("Time Elapsed",te);
@@ -390,16 +395,14 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
         }
     }
     if (log){
-        if (busobj == ""){
-            busobj = SiebelApp.S_App.GetActiveBusObj().GetName();
-        }
         console.log(shMsg["DR_LOG_HDR"]);
-        console.log(shMsg["DR_LOG_BO"] + busobj);
-        console.log(shMsg["DR_LOG_BC"] + buscomp);
-        console.log(shMsg["DR_LOG_SRCH"] + searchspec);
-        console.log(shMsg["DR_LOG_SORT"] + sortspec);
+        console.log(shMsg["DR_LOG_BO"] + temp.GetProperty("Business Object"));
+        console.log(shMsg["DR_LOG_BC"] + temp.GetProperty("Business Component"));
+        console.log(shMsg["DR_LOG_SRCH"] + temp.GetProperty("Search Specification"));
+        console.log(shMsg["DR_LOG_SORT"] + temp.GetProperty("Sort Specification"));
+        console.log(shMsg["DR_VIEW_MODE"] + viewmodes[parseInt(temp.GetProperty("View Mode"))]);
         console.log(shMsg["DR_LOG_TIME"] + parseInt(te) + shMsg["DIAG_DR_2"]);
-        console.log(shMsg["DR_LOG_COUNT"] + rc);
+        console.log(shMsg["DR_LOG_COUNT"] + temp.GetProperty("Record Count"));
     }
     return resultset;
 };
@@ -413,10 +416,13 @@ siebelhub.GetFullRecordSet = function(context){
     debugger;
     var bc;
     var bcName;
+    var pbc; //primary BC
     var applet = null;
     var rs = new Array();
     var i = 0;
     var boName = SiebelApp.S_App.GetActiveBusObj().GetName();
+    var temp = siebelhub.DataRetriever("Repository Business Object","Repository Business Object","[Name] LIKE '" + boName + "'","Id",{"Primary Business Component":""},{"output":"json"});
+    pbc = temp["childArray"]["Repository Business Object_1"]["Primary Business Component"];
     if (context){
         var pm = siebelhub.ValidateContext(context);
     }
@@ -444,7 +450,7 @@ siebelhub.GetFullRecordSet = function(context){
     for (field in rs_temp){
         fields[field] = "";
     }
-    if (bcName != boName){  //query on child BC using active BO
+    if (bcName != pbc){  //query on child BC using active BO
         boName = "";
     }
     result = siebelhub.DataRetriever(boName,bcName,searchspec,sortspec,fields,{"output":"json","log": true});
@@ -954,8 +960,10 @@ shMsg["DR_LOG_SRCH"]    = "Search Specification: ";
 shMsg["DR_LOG_SORT"]    = "Sort Specification: ";
 shMsg["DR_LOG_TIME"]    = "Time Elapsed: ";
 shMsg["DR_LOG_COUNT"]   = "Record Count: ";
+shMsg["DR_VIEW_MODE"]   = "View Mode: ";
 
 //these might not need translation since they are more like Constance ;-)
+var viewmodes = ["SalesRepView","ManagerView","PersonalView","AllView","","OrganizationView","","GroupView","CatalogView","SubOrganizationView"];
 shMsg["TYPE_LIST"]      = "list";
 shMsg["TYPE_FORM"]      = "form";
 shMsg["TYPE_CHART"]     = "chart";
