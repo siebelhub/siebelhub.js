@@ -8,16 +8,17 @@
    FIO_PLACEHOLDER_FIO="TRUE">
 	<PROJECT
 	   ALLOW_OBJECT_LOCKING="Y"
+	   COMMENTS="http://siebelhub.com"
 	   INACTIVE="N"
 	   LANGUAGE_LOCKED="ENU"
 	   LOCKED="Y"
-	   LOCKED_DATE="12/24/2015 09:53:04"
+	   LOCKED_DATE="01/08/2016 02:14:20"
 	   NAME="Siebel Hub"
 	   UI_FREEZE="N"
 	   LOCKED_BY_NAME="SADMIN"
-	   UPDATED="12/24/2015 11:05:37"
+	   UPDATED="01/10/2016 07:22:23"
 	   UPDATED_BY="SADMIN"
-	   CREATED="12/24/2015 09:52:59"
+	   CREATED="08/27/2015 04:12:12"
 	   CREATED_BY="SADMIN"
 	   FIO_PLACEHOLDER_FIO="TRUE">
 		<BUSINESS_SERVICE
@@ -27,16 +28,12 @@
 		   HIDDEN="N"
 		   INACTIVE="N"
 		   NAME="Siebel Hub Service"
-		   OBJECT_LANGUAGE_LOCKED="ENU"
-		   OBJECT_LOCKED="Y"
-		   OBJECT_LOCKED_DATE="12/24/2015 09:53:46"
 		   SERVER_ENABLED="N"
 		   STATE_MANAGEMENT_TYPE="Stateful"
 		   WEB_SERVICE_ENABLED="N"
-		   OBJECT_LOCKED_BY_NAME="SADMIN"
-		   UPDATED="12/24/2015 10:57:01"
+		   UPDATED="01/10/2016 07:22:18"
 		   UPDATED_BY="SADMIN"
-		   CREATED="12/24/2015 09:53:09"
+		   CREATED="01/08/2016 02:14:07"
 		   CREATED_BY="SADMIN">
 			<BUSINESS_SERVICE_LOCALE
 			   APPLICATION_CODE="STD"
@@ -45,18 +42,18 @@
 			   LANGUAGE_CODE="ENU"
 			   NAME="ENU-STD"
 			   TRANSLATE="Y"
-			   UPDATED="12/24/2015 09:53:47"
+			   UPDATED="01/08/2016 02:14:07"
 			   UPDATED_BY="SADMIN"
-			   CREATED="12/24/2015 09:53:47"
+			   CREATED="01/08/2016 02:14:07"
 			   CREATED_BY="SADMIN">
 			</BUSINESS_SERVICE_LOCALE>
 			<BUSINESS_SERVICE_METHOD
 			   HIDDEN="N"
 			   INACTIVE="N"
 			   NAME="GetData"
-			   UPDATED="12/24/2015 10:09:56"
+			   UPDATED="01/08/2016 02:14:07"
 			   UPDATED_BY="SADMIN"
-			   CREATED="12/24/2015 09:53:57"
+			   CREATED="01/08/2016 02:14:07"
 			   CREATED_BY="SADMIN">
 				<BUSINESS_SERVICE_METHOD_ARG
 				   DATA_TYPE="String"
@@ -66,9 +63,9 @@
 				   OPTIONAL="N"
 				   STORAGE_TYPE="Property"
 				   TYPE="Input"
-				   UPDATED="12/24/2015 10:04:55"
+				   UPDATED="01/08/2016 02:14:07"
 				   UPDATED_BY="SADMIN"
-				   CREATED="12/24/2015 09:54:33"
+				   CREATED="01/08/2016 02:14:07"
 				   CREATED_BY="SADMIN">
 				</BUSINESS_SERVICE_METHOD_ARG>
 				<BUSINESS_SERVICE_METHOD_ARG
@@ -79,9 +76,9 @@
 				   OPTIONAL="Y"
 				   STORAGE_TYPE="Property"
 				   TYPE="Input"
-				   UPDATED="12/24/2015 09:54:42"
+				   UPDATED="01/08/2016 02:14:07"
 				   UPDATED_BY="SADMIN"
-				   CREATED="12/24/2015 09:54:19"
+				   CREATED="01/08/2016 02:14:07"
 				   CREATED_BY="SADMIN">
 				</BUSINESS_SERVICE_METHOD_ARG>
 				<BUSINESS_SERVICE_METHOD_ARG
@@ -92,9 +89,9 @@
 				   OPTIONAL="N"
 				   STORAGE_TYPE="Hierarchy"
 				   TYPE="Input"
-				   UPDATED="12/24/2015 10:09:56"
+				   UPDATED="01/08/2016 02:14:07"
 				   UPDATED_BY="SADMIN"
-				   CREATED="12/24/2015 10:09:27"
+				   CREATED="01/08/2016 02:14:07"
 				   CREATED_BY="SADMIN">
 				</BUSINESS_SERVICE_METHOD_ARG>
 				<BUSINESS_SERVICE_METHOD_ARG
@@ -105,9 +102,9 @@
 				   OPTIONAL="N"
 				   STORAGE_TYPE="Hierarchy"
 				   TYPE="Output"
-				   UPDATED="12/24/2015 10:09:47"
+				   UPDATED="01/08/2016 02:14:07"
 				   UPDATED_BY="SADMIN"
-				   CREATED="12/24/2015 09:55:21"
+				   CREATED="01/08/2016 02:14:07"
 				   CREATED_BY="SADMIN">
 				</BUSINESS_SERVICE_METHOD_ARG>
 				<BUSINESS_SERVICE_METHOD_ARG
@@ -118,9 +115,9 @@
 				   OPTIONAL="N"
 				   STORAGE_TYPE="Property"
 				   TYPE="Input"
-				   UPDATED="12/24/2015 09:54:50"
+				   UPDATED="01/08/2016 02:14:07"
 				   UPDATED_BY="SADMIN"
-				   CREATED="12/24/2015 09:54:50"
+				   CREATED="01/08/2016 02:14:07"
 				   CREATED_BY="SADMIN">
 				</BUSINESS_SERVICE_METHOD_ARG>
 				<BUSINESS_SERVICE_METHOD_ARG
@@ -131,9 +128,9 @@
 				   OPTIONAL="Y"
 				   STORAGE_TYPE="Property"
 				   TYPE="Input"
-				   UPDATED="12/24/2015 09:55:07"
+				   UPDATED="01/08/2016 02:14:07"
 				   UPDATED_BY="SADMIN"
-				   CREATED="12/24/2015 09:55:07"
+				   CREATED="01/08/2016 02:14:07"
 				   CREATED_BY="SADMIN">
 				</BUSINESS_SERVICE_METHOD_ARG>
 				<BUSINESS_SERVICE_METHOD_LOCALE
@@ -143,9 +140,9 @@
 				   LANGUAGE_CODE="ENU"
 				   NAME="ENU-STD"
 				   TRANSLATE="Y"
-				   UPDATED="12/24/2015 09:54:17"
+				   UPDATED="01/08/2016 02:14:07"
 				   UPDATED_BY="SADMIN"
-				   CREATED="12/24/2015 09:54:17"
+				   CREATED="01/08/2016 02:14:07"
 				   CREATED_BY="SADMIN">
 				</BUSINESS_SERVICE_METHOD_LOCALE>
 			</BUSINESS_SERVICE_METHOD>
@@ -155,9 +152,9 @@
 			   PROGRAM_LANGUAGE="JS"
 			   SCRIPT="//Your public declarations go here..."
 			   SEQUENCE="1"
-			   UPDATED="12/24/2015 10:11:14"
+			   UPDATED="01/08/2016 02:14:07"
 			   UPDATED_BY="SADMIN"
-			   CREATED="12/24/2015 10:11:14"
+			   CREATED="01/08/2016 02:14:07"
 			   CREATED_BY="SADMIN">
 			</BUSINESS_SERVICE_SERVER_SCRIPT>
 			<BUSINESS_SERVICE_SERVER_SCRIPT
@@ -166,26 +163,27 @@
 			   PROGRAM_LANGUAGE="JS"
 			   SCRIPT="function GetData(Inputs, Outputs){
 	var oBO : BusObject;
+	var aBO : BusObject = TheApplication().ActiveBusObject();
 	var oBC : BusComp;
+	var aBC : BusComp;
 	var cPS : PropertySet = TheApplication().NewPropertySet();
 	var oPS : PropertySet = TheApplication().NewPropertySet();
 	var field : String;
+	var pr_row_id : String = Inputs.GetProperty(&quot;Primary Row Id&quot;);
+	var pr_BCName : String = Inputs.GetProperty(&quot;Primary Business Component&quot;);
+	var activeBO : Boolean = false;
 	var sBCName : String = Inputs.GetProperty(&quot;Business Component&quot;);
 	var counter : Number = 0;
-	var sSearchSpec = Inputs.GetProperty(&quot;Search Specification&quot;);
-	if (sSearchSpec == &quot;&quot;){
-		sSearchSpec = &quot;[Id] IS NOT NULL&quot;;
-	}
-	var sSortSpec = Inputs.GetProperty(&quot;Sort Specification&quot;);
-	if (sSortSpec == &quot;&quot;){
-		sSortSpec = &quot;Id&quot;;
-	}
-	var fields = Inputs.GetChild(0);
+	var sSearchSpec : String = Inputs.GetProperty(&quot;Search Specification&quot;);
+	var sSortSpec : String = Inputs.GetProperty(&quot;Sort Specification&quot;);
+	var sViewMode : Number = Inputs.GetProperty(&quot;View Mode&quot;);
+	var fields : PropertySet = Inputs.GetChild(0);
 	if (Inputs.GetProperty(&quot;Business Object&quot;) != &quot;&quot;){
 		oBO = TheApplication().GetBusObject(Inputs.GetProperty(&quot;Business Object&quot;));
 	}
 	else{
 		oBO = TheApplication().ActiveBusObject();
+		activeBO = true;
 	}
 	if (oBO)
 	{
@@ -199,11 +197,34 @@
 	else{
 		throw(&quot;Failed to initialize Business Object&quot;);
 	}
+	if (sSearchSpec == &quot;&quot;){
+		aBC = aBO.GetBusComp(sBCName);
+		sSearchSpec = aBC.GetSearchExpr();
+	}
+	if (sSortSpec == &quot;&quot;){
+		aBC = aBO.GetBusComp(sBCName);
+		sSortSpec = aBC.GetSortSpec();
+	}
+	if (sViewMode == &quot;&quot;){
+		aBC = aBO.GetBusComp(sBCName);
+		sViewMode = aBC.GetViewMode();
+	}
+	if (activeBO &amp;&amp; pr_BCName != &quot;&quot; &amp;&amp; pr_row_id != &quot;&quot;){
+	//query parent BC in non-UI mode and then fetch child BC
+		oBO = TheApplication().GetBusObject(TheApplication().ActiveBusObject().Name());
+		aBC = oBO.GetBusComp(pr_BCName);
+		aBC.ClearToQuery();
+		aBC.SetSearchSpec(&quot;Id&quot;,pr_row_id);
+		aBC.SetViewMode(AllView);
+		aBC.ExecuteQuery(ForwardOnly);
+		oBC = oBO.GetBusComp(sBCName);
+	}
 	if (oBC){
 		oBC.ClearToQuery();
 		oBC.ActivateMultipleFields(fields);
 		oBC.SetSearchExpr(sSearchSpec);
 		oBC.SetSortSpec(sSortSpec);
+		oBC.SetViewMode(sViewMode);
 		oBC.ExecuteQuery(ForwardOnly);
 		if (oBC.FirstRecord()){
 			do{
@@ -222,13 +243,19 @@
 	else{
 		throw(&quot;Failed to initialize Business Component&quot;);
 	}
+	
 	Outputs.SetProperty(&quot;Record Count&quot;, ToString(counter));
+	Outputs.SetProperty(&quot;Business Object&quot;,oBO.Name());
+	Outputs.SetProperty(&quot;Business Component&quot;,oBC.Name());
+	Outputs.SetProperty(&quot;Search Specification&quot;,sSearchSpec);
+	Outputs.SetProperty(&quot;Sort Specification&quot;,sSortSpec);
+	Outputs.SetProperty(&quot;View Mode&quot;,sViewMode);
 	Outputs.SetType(&quot;Record Set&quot;);
 }"
 			   SEQUENCE="2"
-			   UPDATED="12/24/2015 10:57:01"
+			   UPDATED="01/10/2016 07:22:18"
 			   UPDATED_BY="SADMIN"
-			   CREATED="12/24/2015 10:06:03"
+			   CREATED="01/08/2016 02:14:07"
 			   CREATED_BY="SADMIN">
 			</BUSINESS_SERVICE_SERVER_SCRIPT>
 			<BUSINESS_SERVICE_SERVER_SCRIPT
@@ -240,9 +267,9 @@
 	return (ContinueOperation);
 }"
 			   SEQUENCE="3"
-			   UPDATED="12/24/2015 10:11:14"
+			   UPDATED="01/08/2016 02:14:07"
 			   UPDATED_BY="SADMIN"
-			   CREATED="12/24/2015 10:05:47"
+			   CREATED="01/08/2016 02:14:07"
 			   CREATED_BY="SADMIN">
 			</BUSINESS_SERVICE_SERVER_SCRIPT>
 			<BUSINESS_SERVICE_SERVER_SCRIPT
@@ -264,9 +291,9 @@
 	return (CancelOperation);
 }"
 			   SEQUENCE="4"
-			   UPDATED="12/24/2015 10:11:14"
+			   UPDATED="01/08/2016 02:14:07"
 			   UPDATED_BY="SADMIN"
-			   CREATED="12/24/2015 09:56:10"
+			   CREATED="01/08/2016 02:14:07"
 			   CREATED_BY="SADMIN">
 			</BUSINESS_SERVICE_SERVER_SCRIPT>
 		</BUSINESS_SERVICE>
