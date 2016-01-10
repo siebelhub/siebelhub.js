@@ -51,6 +51,7 @@
  06-JAN-2016    v1.6    ahansal     minor updates and comments
  08-JAN-2016    v1.7    ahansal     Added GetFullRecordSet method and enhanced DataRetriever
  09-JAN-2016    v1.7    ahansal     Continued work on GetFullRecordSet
+ 10-JAN-2016    v1.7    ahansal     GetFullRecordset, Server-side BS improved, enough for educational code
 
  TODO:
  optimize siebelhub.js for list applets
@@ -63,6 +64,7 @@
  enable drag and drop in list programmatically (like collapsible)
  conditional formatting
  GetRecordCount function (same as GetFullRecordSet)
+ GetAppletObjByName
  SiebelHub PM for list applets (to get and update PM propset in Setup)
 
 The siebelhub.js Manifesto
@@ -340,6 +342,7 @@ siebelhub.GetControlObjByLabel = function(context,label){
 // siebelhub.DataRetriever("Repository Details","Repository Field","[Name]='First Name' AND [Parent Name]='Contact'","",{"Join":"","Column":"","Comments":""})
 // use case 3: Run full query on Opportunities (no search spec);
 // siebelhub.DataRetriever("Opportunity","Opportunity","","",{"Name":""},{"output":"json"});
+//TODO: avoid query on active BO when BO =""; pass primary row id and use on child query
 siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,options){
     //Timer
     //View Modes: SalesRepView,ManagerView,PersonalView,AllView,OrganizationView,GroupView,CatalogView,SubOrganizationView
@@ -347,6 +350,8 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
     var ts_end;
     var log = true;
     var viewmode = viewmodes.indexOf("OrganizationView");
+    var pbc;
+    var rowid;
     var output = null;
     //check for options
     if (options){
@@ -356,6 +361,8 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
         }
         log = options.log ? options.log : true;
         viewmode = options.viewmode ? options.viewmode : viewmodes.indexOf("OrganizationView");
+        pbc = options.pbc ? options.pbc : "";
+        rowid = options.rowid ? options.rowid : "";
     }
     var resultset = null;
     //first, get the service instance
@@ -373,6 +380,8 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
     iPS.SetProperty("Search Specification", searchspec);
     iPS.SetProperty("Sort Specification", sortspec);
     iPS.SetProperty("View Mode", viewmode);
+    iPS.SetProperty("Primary Business Component", pbc);
+    iPS.SetProperty("Primary Row Id", rowid);
     //field list must be passed as child PS
     for (field in fields){
        fPS.SetProperty(field,"");
@@ -417,6 +426,7 @@ siebelhub.GetFullRecordSet = function(context){
     var bc;
     var bcName;
     var pbc; //primary BC
+    var rowid; //primary ROW_ID
     var applet = null;
     var rs = new Array();
     var i = 0;
@@ -452,8 +462,9 @@ siebelhub.GetFullRecordSet = function(context){
     }
     if (bcName != pbc){  //query on child BC using active BO
         boName = "";
+        rowid = siebelhub.GetFieldValue("Id",siebelhub.GetAppletsByBCName(pbc)[0]);
     }
-    result = siebelhub.DataRetriever(boName,bcName,searchspec,sortspec,fields,{"output":"json","log": true});
+    result = siebelhub.DataRetriever(boName,bcName,searchspec,sortspec,fields,{"output":"json","log": true,"pbc":pbc,"rowid":rowid});
     for (record in result.childArray){
             if (record != "childArray"){
             rs[i] = result.childArray[record];
