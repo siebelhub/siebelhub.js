@@ -16,7 +16,7 @@
 	   NAME="Siebel Hub"
 	   UI_FREEZE="N"
 	   LOCKED_BY_NAME="SADMIN"
-	   UPDATED="01/10/2016 07:22:23"
+	   UPDATED="01/11/2016 23:36:45"
 	   UPDATED_BY="SADMIN"
 	   CREATED="08/27/2015 04:12:12"
 	   CREATED_BY="SADMIN"
@@ -31,7 +31,7 @@
 		   SERVER_ENABLED="N"
 		   STATE_MANAGEMENT_TYPE="Stateful"
 		   WEB_SERVICE_ENABLED="N"
-		   UPDATED="01/10/2016 07:22:18"
+		   UPDATED="01/11/2016 23:17:43"
 		   UPDATED_BY="SADMIN"
 		   CREATED="01/08/2016 02:14:07"
 		   CREATED_BY="SADMIN">
@@ -176,7 +176,7 @@
 	var counter : Number = 0;
 	var sSearchSpec : String = Inputs.GetProperty(&quot;Search Specification&quot;);
 	var sSortSpec : String = Inputs.GetProperty(&quot;Sort Specification&quot;);
-	var sViewMode : Number = Inputs.GetProperty(&quot;View Mode&quot;);
+	var sViewMode : String = Inputs.GetProperty(&quot;View Mode&quot;);
 	var fields : PropertySet = Inputs.GetChild(0);
 	if (Inputs.GetProperty(&quot;Business Object&quot;) != &quot;&quot;){
 		oBO = TheApplication().GetBusObject(Inputs.GetProperty(&quot;Business Object&quot;));
@@ -207,7 +207,7 @@
 	}
 	if (sViewMode == &quot;&quot;){
 		aBC = aBO.GetBusComp(sBCName);
-		sViewMode = aBC.GetViewMode();
+		sViewMode = ToInt32(aBC.GetViewMode());
 	}
 	if (activeBO &amp;&amp; pr_BCName != &quot;&quot; &amp;&amp; pr_row_id != &quot;&quot;){
 	//query parent BC in non-UI mode and then fetch child BC
@@ -253,7 +253,7 @@
 	Outputs.SetType(&quot;Record Set&quot;);
 }"
 			   SEQUENCE="2"
-			   UPDATED="01/10/2016 07:22:18"
+			   UPDATED="01/11/2016 23:17:43"
 			   UPDATED_BY="SADMIN"
 			   CREATED="01/08/2016 02:14:07"
 			   CREATED_BY="SADMIN">
