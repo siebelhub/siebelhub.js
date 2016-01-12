@@ -52,6 +52,7 @@
  08-JAN-2016    v1.7    ahansal     Added GetFullRecordSet method and enhanced DataRetriever
  09-JAN-2016    v1.7    ahansal     Continued work on GetFullRecordSet
  10-JAN-2016    v1.7    ahansal     GetFullRecordset, Server-side BS improved, enough for educational code
+ 12-JAN-2016    v1.7    ahansal     fixed issues with view mode in GetFullRecordSet
 
  TODO:
  optimize siebelhub.js for list applets
@@ -342,25 +343,25 @@ siebelhub.GetControlObjByLabel = function(context,label){
 // siebelhub.DataRetriever("Repository Details","Repository Field","[Name]='First Name' AND [Parent Name]='Contact'","",{"Join":"","Column":"","Comments":""})
 // use case 3: Run full query on Opportunities (no search spec);
 // siebelhub.DataRetriever("Opportunity","Opportunity","","",{"Name":""},{"output":"json"});
-//TODO: avoid query on active BO when BO =""; pass primary row id and use on child query
+
 siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,options){
     //Timer
     //View Modes: SalesRepView,ManagerView,PersonalView,AllView,OrganizationView,GroupView,CatalogView,SubOrganizationView
     var ts_start;
     var ts_end;
     var log = true;
-    var viewmode = viewmodes.indexOf("OrganizationView");
+    var viewmode;
     var pbc;
     var rowid;
     var output = null;
     //check for options
     if (options){
-        output = options.output.toLowerCase();
+        output = options.output ? options.output.toLowerCase() : "";
         if (output != "json" && output != "propset"){
             output = "propset";
         }
         log = options.log ? options.log : true;
-        viewmode = options.viewmode ? options.viewmode : viewmodes.indexOf("OrganizationView");
+        viewmode = options.viewmode ? options.viewmode : "";
         pbc = options.pbc ? options.pbc : "";
         rowid = options.rowid ? options.rowid : "";
     }
@@ -422,7 +423,6 @@ siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,opt
   Output: record set as array of objects (similar to GetRecordSet)
  */
 siebelhub.GetFullRecordSet = function(context){
-    debugger;
     var bc;
     var bcName;
     var pbc; //primary BC
@@ -431,7 +431,7 @@ siebelhub.GetFullRecordSet = function(context){
     var rs = new Array();
     var i = 0;
     var boName = SiebelApp.S_App.GetActiveBusObj().GetName();
-    var temp = siebelhub.DataRetriever("Repository Business Object","Repository Business Object","[Name] LIKE '" + boName + "'","Id",{"Primary Business Component":""},{"output":"json"});
+    var temp = siebelhub.DataRetriever("Repository Business Object","Repository Business Object","[Name] LIKE '" + boName + "'","Id",{"Primary Business Component":""},{"output":"json","viewmode":"3"});
     pbc = temp["childArray"]["Repository Business Object_1"]["Primary Business Component"];
     if (context){
         var pm = siebelhub.ValidateContext(context);
@@ -473,6 +473,7 @@ siebelhub.GetFullRecordSet = function(context){
     }
     return rs;
 };
+
 /*
 Function ps2json: converts a property set to a JSON object
 Input: json object (e.g. {}), property set, counter (optional)
