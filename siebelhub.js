@@ -53,6 +53,7 @@
  09-JAN-2016    v1.7    ahansal     Continued work on GetFullRecordSet
  10-JAN-2016    v1.7    ahansal     GetFullRecordset, Server-side BS improved, enough for educational code
  12-JAN-2016    v1.7    ahansal     fixed issues with view mode in GetFullRecordSet
+ 14-JAN-2016    v1.8    jburgers    added swemessage_<lang> override function
 
  TODO:
  optimize siebelhub.js for list applets
@@ -923,6 +924,11 @@ siebelhub.SelfDiagnostics = function(options){
 siebelhub.GoToTheHub = function(){
     window.open("http://www.siebelhub.com");
 };
+
+siebelhub.swemessageOverride = function (strId, strTranslation) {
+    //overrides a siebel default translation from /scripts/siebel/swemessage_<lang>.js
+    SiebelApp.S_App.LocaleObject.AddLocalString(strId, strTranslation);
+}
 
 /*
  Localization happens here
