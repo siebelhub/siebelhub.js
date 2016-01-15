@@ -899,7 +899,7 @@ siebelhub.SelfDiagnostics = function(options){
     //check DataRetriever
     //lookup SADMIN's ROW_ID and take query time as we go
     try{
-        var resultset = siebelhub.DataRetriever("Employee","Employee","[Login Name]='SADMIN'","",{"Id":""});
+        var resultset = siebelhub.DataRetriever("Employee","Employee","[Login Name]='SADMIN'","Id",{"Id":""},{"pbc":"Employee","viewmode":"3"});
         var row_id = resultset.GetChild(0).GetProperty("Id");
         if (row_id == "0-1"){
             var time_elapsed = resultset.GetProperty("Time Elapsed");
