@@ -53,20 +53,18 @@
  09-JAN-2016    v1.7    ahansal     Continued work on GetFullRecordSet
  10-JAN-2016    v1.7    ahansal     GetFullRecordset, Server-side BS improved, enough for educational code
  12-JAN-2016    v1.7    ahansal     fixed issues with view mode in GetFullRecordSet
+ 03-FEB-2016    v1.7    ahansal     Created experimental HandlePendingCommits method
 
  TODO:
  optimize siebelhub.js for list applets
  check for PW compatibility
- use cases in GitHub Wiki (started)
  document on Siebel Hub (started)
- ebook documentation (wip)
+ ebook documentation (ebook on Amazon and PDF on Siebel Hub Shop)
  cross browser testing (currently testing on FF and Chrome)
  Get number of populated/empty controls/cells for an applet (use case: progress bar)
- enable drag and drop in list programmatically (like collapsible)
  conditional formatting
  GetRecordCount function (same as GetFullRecordSet)
  GetAppletObjByName
- SiebelHub PM for list applets (to get and update PM propset in Setup)
 
 The siebelhub.js Manifesto
 
@@ -347,6 +345,7 @@ siebelhub.GetControlObjByLabel = function(context,label){
 siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,options){
     //Timer
     //View Modes: SalesRepView,ManagerView,PersonalView,AllView,OrganizationView,GroupView,CatalogView,SubOrganizationView
+    debugger;
     var ts_start;
     var ts_end;
     var log = true;
@@ -824,8 +823,33 @@ function SiebelHubPL(){
     if ($(".siebelhub_trampstamp").length == 0){
         $("#_swecontent").append(stamp);
     }
-
+    //experimental stuff comes here:
+    siebelhub.HandlePendingCommits();  //handle this one with care
 }
+/*
+ Function HandlePendingCommits: Establishes a listener to handle uncommitted data
+ EXPERIMENTAL! Works with most test cases but creates issues with MVG events
+ */
+siebelhub.HandlePendingCommits = function(){
+    $(window).on('popstate', function(e) {  //popstate is called very often in Open UI
+        e.stopImmediatePropagation(); //prevent bubbling
+        if (SiebelApp.S_App.GetActiveView() && SiebelApp.S_App.GetActiveView().GetActiveApplet()){
+            //ok, we have a valid active applet
+            //let's see if there are any pending changes
+            //kudos to Jeroen Burgers
+            var isCommitPending = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetBusComp().IsCommitPending();
+            if(isCommitPending){ //let's save those changes
+                console.log(shMsg["COMMIT_PENDING"]);
+                //TODO: secure this call for MVG, Associate events
+                //Invoke WriteRecord the right way (via applet)
+                SiebelApp.S_App.GetActiveView().GetActiveApplet().InvokeMethod("WriteRecord");
+                //fix issue with browser history here
+                //brute force...
+                location.reload(true);
+            }
+        }
+     });
+};
 
 /*
 Function CreateSiebelHubTrampStamp: Generates the 'Tramp Stamp'
@@ -924,6 +948,10 @@ siebelhub.GoToTheHub = function(){
     window.open("http://www.siebelhub.com");
 };
 
+siebelhub.swemessageOverride = function (strId, strTranslation) {
+    //overrides a siebel default translation from /scripts/siebel/swemessage_<lang>.js
+    SiebelApp.S_App.LocaleObject.AddLocalString(strId, strTranslation);
+};
 /*
  Localization happens here
  For a localized version, copy this file to a language directory and translate the array values below
@@ -973,6 +1001,7 @@ shMsg["DR_LOG_SORT"]    = "Sort Specification: ";
 shMsg["DR_LOG_TIME"]    = "Time Elapsed: ";
 shMsg["DR_LOG_COUNT"]   = "Record Count: ";
 shMsg["DR_VIEW_MODE"]   = "View Mode: ";
+shMsg["COMMIT_PENDING"] = "Detected pending commit. Trying to write record.";
 
 //these might not need translation since they are more like Constance ;-)
 var viewmodes = ["SalesRepView","ManagerView","PersonalView","AllView","","OrganizationView","","GroupView","CatalogView","SubOrganizationView"];
