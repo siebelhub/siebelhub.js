@@ -54,6 +54,7 @@
  10-JAN-2016    v1.7    ahansal     GetFullRecordset, Server-side BS improved, enough for educational code
  12-JAN-2016    v1.7    ahansal     fixed issues with view mode in GetFullRecordSet
  03-FEB-2016    v1.7    ahansal     Created experimental HandlePendingCommits method
+ 05-FEB-2016    v1.8    ahansal     Replaced HandlePendingCommits with EndLife override and SavePendingChanges method
 
  TODO:
  optimize siebelhub.js for list applets
@@ -65,6 +66,7 @@
  conditional formatting
  GetRecordCount function (same as GetFullRecordSet)
  GetAppletObjByName
+ "Applet Whitelist/Blacklist" (limit functionality for some applets);
 
 The siebelhub.js Manifesto
 
@@ -345,7 +347,6 @@ siebelhub.GetControlObjByLabel = function(context,label){
 siebelhub.DataRetriever = function(busobj,buscomp,searchspec,sortspec,fields,options){
     //Timer
     //View Modes: SalesRepView,ManagerView,PersonalView,AllView,OrganizationView,GroupView,CatalogView,SubOrganizationView
-    debugger;
     var ts_start;
     var ts_end;
     var log = true;
@@ -824,31 +825,52 @@ function SiebelHubPL(){
         $("#_swecontent").append(stamp);
     }
     //experimental stuff comes here:
-    siebelhub.HandlePendingCommits();  //handle this one with care
+    //get applet map
+    var appletmap = SiebelApp.S_App.GetActiveView().GetAppletMap();
+    for (a in appletmap){   //override EndLife for each applet to implement save pending changes
+        //might not go down well with some views, hence commented it
+        //uncomment if you want to test the "save pending changes" implementation
+        //siebelhub.Overdrive(appletmap[a].GetPModel().GetRenderer(),"EndLife",siebelhub.SavePendingChanges);
+    }
 }
+
 /*
- Function HandlePendingCommits: Establishes a listener to handle uncommitted data
- EXPERIMENTAL! Works with most test cases but creates issues with MVG events
+Function Overdrive: experimental method to override any prototype at runtime
+ Inputs: context (pm, pr or applet) - currently supporting only PRs; prototype method to override, method to act as override
  */
-siebelhub.HandlePendingCommits = function(){
-    $(window).on('popstate', function(e) {  //popstate is called very often in Open UI
-        e.stopImmediatePropagation(); //prevent bubbling
-        if (SiebelApp.S_App.GetActiveView() && SiebelApp.S_App.GetActiveView().GetActiveApplet()){
-            //ok, we have a valid active applet
-            //let's see if there are any pending changes
-            //kudos to Jeroen Burgers
-            var isCommitPending = SiebelApp.S_App.GetActiveView().GetActiveApplet().GetBusComp().IsCommitPending();
-            if(isCommitPending){ //let's save those changes
-                console.log(shMsg["COMMIT_PENDING"]);
-                //TODO: secure this call for MVG, Associate events
-                //Invoke WriteRecord the right way (via applet)
-                SiebelApp.S_App.GetActiveView().GetActiveApplet().InvokeMethod("WriteRecord");
-                //fix issue with browser history here
-                //brute force...
-                location.reload(true);
-            }
+siebelhub.Overdrive = function(context,proto,method){
+    if (typeof(context.ShowUI) === "function"){ //test for PR
+        switch(proto){
+            //we only support EndLife at the moment
+            case "EndLife": context.constructor.prototype.EndLife = method;
+                            break;
+            default       : break;
         }
-     });
+    }
+    else{
+        return null;
+    }
+};
+
+/*Function SavePendingChanges: implements a potential solution to the "browser back button" problem (data loss)
+Inputs: nothing (but must be called from within a pr, pm or applet instance
+ */
+siebelhub.SavePendingChanges = function(){
+    var pm = siebelhub.ValidateContext(this);
+    if (pm){
+        //get applet instance
+        var applet = SiebelApp.S_App.GetActiveView().GetApplet(pm.GetObjName());
+        //get BC instance
+        var bc = pm.Get("GetBusComp");
+        //call IsCommitPending (kudos to Jeroen Burgers) - this is undocumented!
+        var isCommitPending = bc.IsCommitPending();
+        if(isCommitPending){  //unsaved changes exist
+            console.log(shMsg["COMMIT_PENDING"]);
+            //call applet(!) method to force WriteRecord
+            applet.InvokeMethod("WriteRecord");
+        }
+    }
+
 };
 
 /*
