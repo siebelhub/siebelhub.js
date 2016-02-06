@@ -55,6 +55,7 @@
  12-JAN-2016    v1.7    ahansal     fixed issues with view mode in GetFullRecordSet
  03-FEB-2016    v1.7    ahansal     Created experimental HandlePendingCommits method
  05-FEB-2016    v1.8    ahansal     Replaced HandlePendingCommits with EndLife override and SavePendingChanges method
+ 06-FEB-2016    v1.8    ahansal     Enhanced OverDrive method
 
  TODO:
  optimize siebelhub.js for list applets
@@ -825,30 +826,37 @@ function SiebelHubPL(){
         $("#_swecontent").append(stamp);
     }
     //experimental stuff comes here:
-    //get applet map
+    //get applet map. we're going to experiment with all applets in the view
     var appletmap = SiebelApp.S_App.GetActiveView().GetAppletMap();
-    for (a in appletmap){   //override EndLife for each applet to implement save pending changes
+    for (a in appletmap){
+        //override EndLife for each applet to implement save pending changes
         //might not go down well with some views, hence commented it
-        //uncomment if you want to test the "save pending changes" implementation
-        //siebelhub.Overdrive(appletmap[a].GetPModel().GetRenderer(),"EndLife",siebelhub.SavePendingChanges);
+        //uncomment next line if you want to test the "save pending changes" implementation
+        //siebelhub.Overdrive(appletmap[a],"EndLife",siebelhub.SavePendingChanges);
+
+        //attach FieldChange event handler; just because we can...
+        //uncomment next line to play
+        //siebelhub.Overdrive(appletmap[a],"FieldChange",siebelhub.HelloWorld);
     }
 }
 
 /*
-Function Overdrive: experimental method to override any prototype at runtime
- Inputs: context (pm, pr or applet) - currently supporting only PRs; prototype method to override, method to act as override
+Function Overdrive: experimental method to override a method at runtime
+ Inputs: context (pm, pr or applet), (prototype) method to override, method to act as override
  */
 siebelhub.Overdrive = function(context,proto,method){
-    if (typeof(context.ShowUI) === "function"){ //test for PR
+    var pm = siebelhub.ValidateContext(context);
+    debugger;
+    if (pm){
         switch(proto){
-            //we only support EndLife at the moment
-            case "EndLife": context.constructor.prototype.EndLife = method;
-                            break;
-            default       : break;
+            //override EndLife of the PR at runtime
+            case "EndLife"    : pm.GetRenderer().constructor.prototype.EndLife = method;
+                                break;
+            //register a FieldChange event handler at runtime
+            case "FieldChange": pm.AttachPMBinding(proto,method);
+                                break;
+            default           : break;
         }
-    }
-    else{
-        return null;
     }
 };
 
@@ -870,7 +878,6 @@ siebelhub.SavePendingChanges = function(){
             applet.InvokeMethod("WriteRecord");
         }
     }
-
 };
 
 /*
