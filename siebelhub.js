@@ -56,6 +56,7 @@
  03-FEB-2016    v1.7    ahansal     Created experimental HandlePendingCommits method
  05-FEB-2016    v1.8    ahansal     Replaced HandlePendingCommits with EndLife override and SavePendingChanges method
  06-FEB-2016    v1.8    ahansal     Enhanced OverDrive method
+ 07-FEB-2016    v1.9    ahansal     Added notification for unsaved changes via tramp stamp icon
 
  TODO:
  optimize siebelhub.js for list applets
@@ -67,7 +68,7 @@
  conditional formatting
  GetRecordCount function (same as GetFullRecordSet)
  GetAppletObjByName
- "Applet Whitelist/Blacklist" (limit functionality for some applets);
+ "Applet Whitelist/Blacklist" (limit functionality for some applets)
 
 The siebelhub.js Manifesto
 
@@ -834,9 +835,9 @@ function SiebelHubPL(){
         //uncomment next line if you want to test the "save pending changes" implementation
         //siebelhub.Overdrive(appletmap[a],"EndLife",siebelhub.SavePendingChanges);
 
-        //attach FieldChange event handler; just because we can...
-        //uncomment next line to play
-        //siebelhub.Overdrive(appletmap[a],"FieldChange",siebelhub.HelloWorld);
+        //attach PM bindings to all applets just because we can...
+        siebelhub.Overdrive(appletmap[a],"FieldChange",siebelhub.NotifyPendingChanges);
+        siebelhub.Overdrive(appletmap[a],"ShowSelection",siebelhub.NotifyPendingChanges);
     }
 }
 
@@ -846,33 +847,34 @@ Function Overdrive: experimental method to override a method at runtime
  */
 siebelhub.Overdrive = function(context,proto,method){
     var pm = siebelhub.ValidateContext(context);
-    debugger;
     if (pm){
         switch(proto){
             //override EndLife of the PR at runtime
             case "EndLife"    : pm.GetRenderer().constructor.prototype.EndLife = method;
                                 break;
-            //register a FieldChange event handler at runtime
-            case "FieldChange": pm.AttachPMBinding(proto,method);
-                                break;
+            //register PM bindings at runtime
+            case "FieldChange":
+            case "ShowSelection": pm.AttachPMBinding(proto,method);
+                                  break;
             default           : break;
         }
     }
 };
 
 /*Function SavePendingChanges: implements a potential solution to the "browser back button" problem (data loss)
-Inputs: nothing (but must be called from within a pr, pm or applet instance
+Inputs: optional: context (pm,pr or applet). When no context is passed, we try current this object.
  */
-siebelhub.SavePendingChanges = function(){
-    var pm = siebelhub.ValidateContext(this);
+siebelhub.SavePendingChanges = function(context){
+    var pm = null;
+    if (context){
+        pm = siebelhub.ValidateContext(context);
+    }
+    else{
+        pm = siebelhub.ValidateContext(this);
+    }
     if (pm){
-        //get applet instance
-        var applet = SiebelApp.S_App.GetActiveView().GetApplet(pm.GetObjName());
-        //get BC instance
-        var bc = pm.Get("GetBusComp");
-        //call IsCommitPending (kudos to Jeroen Burgers) - this is undocumented!
-        var isCommitPending = bc.IsCommitPending();
-        if(isCommitPending){  //unsaved changes exist
+        if(siebelhub.IsCommitPending(pm)){  //unsaved changes exist
+            var applet = SiebelApp.S_App.GetActiveView().GetApplet(pm.GetObjName());
             console.log(shMsg["COMMIT_PENDING"]);
             //call applet(!) method to force WriteRecord
             applet.InvokeMethod("WriteRecord");
@@ -881,39 +883,86 @@ siebelhub.SavePendingChanges = function(){
 };
 
 /*
+Function IsCommitPending: Wrapper for undocumented framework BC function
+Inputs: context (pm,pr or applet)
+Output: returns true if unsaved changes exist, false if not
+ */
+siebelhub.IsCommitPending = function(context){
+    var pm = siebelhub.ValidateContext(context);
+    var retvalue = false;
+    if (pm){
+        //get applet instance
+        var applet = SiebelApp.S_App.GetActiveView().GetApplet(pm.GetObjName());
+        //get BC instance
+        var bc = pm.Get("GetBusComp");
+        //call IsCommitPending (kudos to Jeroen Burgers) - this is undocumented!
+        var retvalue = bc.IsCommitPending();
+    }
+    return retvalue;
+};
+
+/*
+Function NotifyPendingChanges: Notify user of unsaved changes by modifying the tramp stamp
+Requires CSS, see GitHub repo for siebelhub.css.
+ */
+siebelhub.NotifyPendingChanges = function(){
+    var stamp = $("#sh_trampstamp");
+    var pm = siebelhub.ValidateContext(this);
+    if (pm){
+        if(siebelhub.IsCommitPending(pm)){  //unsaved changes exist
+            stamp.removeClass("siebelhub_trampstamp");
+            stamp.addClass("siebelhub_trampstamp_pending");
+            stamp.attr("title",shMsg["SH_STAMP_PEND"]);
+            $(".siebelhub_trampstamp_pending").click(function(){
+                siebelhub.SavePendingChanges(pm);
+            });
+        }
+        else{
+            stamp.removeClass("siebelhub_trampstamp_pending");
+            stamp.addClass("siebelhub_trampstamp");
+            stamp.attr("title",shMsg["SH_STAMP"]);
+        }
+    }
+};
+
+/*
 Function CreateSiebelHubTrampStamp: Generates the 'Tramp Stamp'
-Requires CSS! See the GitHub repo for CSS example file
+Requires CSS! See the GitHub repo for siebelhub.css
  */
 siebelhub.CreateSiebelHubTrampStamp = function(options){
     var stamp = siebelhub.GenerateDOMElement("div", {
         class:"siebelhub_trampstamp",
-        title:shMsg["SH_STAMP"]
+        title:shMsg["SH_STAMP"],
+        id:"sh_trampstamp"   //ahansal 07-FEB-2016: added id for better isolation
     });
 
     stamp.click(function() {
-        var dlg = siebelhub.GenerateDOMElement("div");
-        dlg.html(shMsg["SH_DET_BODY"]);
-        dlg.dialog({
-            buttons: [
-                {
-                    text: shMsg["DIAG_BTN"],
-                    click: function() {
-                        siebelhub.SelfDiagnostics({display:"textarea"});
+        if ($(".siebelhub_trampstamp").length > 0){  //ahansal 07-FEB-2016: added if block to avoid issues with notification
+            var dlg = siebelhub.GenerateDOMElement("div");
+            dlg.html(shMsg["SH_DET_BODY"]);
+            dlg.dialog({
+                buttons: [
+                    {
+                        text: shMsg["DIAG_BTN"],
+                        click: function() {
+                            siebelhub.SelfDiagnostics({display:"textarea"});
+                        }
+                    },
+                    {
+                        text: shMsg["CLOSE"],
+                        click: function() {
+                            $("#selfdiag_output").remove();
+                            $(this).dialog("destroy");
+                        }
                     }
-                },
-                {
-                    text: shMsg["CLOSE"],
-                    click: function() {
-                        $("#selfdiag_output").remove();
-                        $(this).dialog("destroy");
-                    }
-                }
-             ],
-            width: 600,
-            modal: true,
-            dialogClass: "siebelhub_details",
-            title:shMsg["SH_DET_TITLE"]
-        });
+                ],
+                width: 600,
+                modal: true,
+                dialogClass: "siebelhub_details",
+                title:shMsg["SH_DET_TITLE"]
+
+            });
+        }
     });
     return stamp;
 };
@@ -998,6 +1047,7 @@ shMsg["NOBC_1"]         = "Current applet does not use the BC provided";
 shMsg["TYPE_UNKNOWN"]   = "It's a Bingo!";
 shMsg["SH_PL"]          = "siebelhub.js: Running SiebelHubPL postload event listner...";
 shMsg["SH_STAMP"]       = "The Siebel Hub JavaScript Library for Siebel Open UI is available. Click for details.";
+shMsg["SH_STAMP_PEND"]  = "You have unsaved changes! Click to save now.";
 shMsg["SH_DET_TITLE"]   = "About the Siebel Hub Library";
 shMsg["CUR_YEAR"]       = new Date().getFullYear();  //don't translate this ;-)
 shMsg["SH_DET_BODY"]    = "<p>The <a href='https://github.com/siebelhub/siebelhub.js' target='_blank'>Siebel Hub (siebelhub.js) library</a> is an educational example how to create a reusable custom JavaScript library for Siebel Open UI" +
