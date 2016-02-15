@@ -57,11 +57,11 @@
  05-FEB-2016    v1.8    ahansal     Replaced HandlePendingCommits with EndLife override and SavePendingChanges method
  06-FEB-2016    v1.8    ahansal     Enhanced OverDrive method
  07-FEB-2016    v1.9    ahansal     Added notification for unsaved changes via tramp stamp icon
+ 13-FEB 2016    v2.0    ahansal     Added GetEditableField method
+ 15-FEB 2016    v2.0    ahansal     Added progress bar functionality
 
  TODO:
- optimize siebelhub.js for list applets
- check for PW compatibility
- document on Siebel Hub (started)
+
  ebook documentation (ebook on Amazon and PDF on Siebel Hub Shop)
  cross browser testing (currently testing on FF and Chrome)
  Get number of populated/empty controls/cells for an applet (use case: progress bar)
@@ -839,6 +839,7 @@ function SiebelHubPL(){
         siebelhub.Overdrive(appletmap[a],"FieldChange",siebelhub.NotifyPendingChanges);
         siebelhub.Overdrive(appletmap[a],"ShowSelection",siebelhub.NotifyPendingChanges);
     }
+    siebelhub.ShowProgressBar(siebelhub.GetActiveApplet());
 }
 
 /*
@@ -896,7 +897,7 @@ siebelhub.IsCommitPending = function(context){
         //get BC instance
         var bc = pm.Get("GetBusComp");
         //call IsCommitPending (kudos to Jeroen Burgers) - this is undocumented!
-        var retvalue = bc.IsCommitPending();
+        retvalue = bc.IsCommitPending();
     }
     return retvalue;
 };
@@ -923,6 +924,147 @@ siebelhub.NotifyPendingChanges = function(){
             stamp.attr("title",shMsg["SH_STAMP"]);
         }
     }
+};
+
+/*
+Function GetEditableFields: Returns object with BC field names and values for all editable and MVG fields
+Input: context (PM, PR or applet instance)
+Output: JSON object
+ */
+siebelhub.GetEditableFields = function(context){
+    var pm = null;
+    var retvalue = {};
+    pm = siebelhub.ValidateContext(context);
+    if (pm){
+        var controlSet = pm.Get("GetControls");
+        var bc = pm.Get("GetBusComp"); //get BC instance
+        var fieldmap = bc.GetFieldMap(); //get field map of BC instance
+        var field;
+        var fieldname = "";
+        var isReadOnly = false;
+        var popupType = "";
+        var controlElem;
+        for (c in controlSet){ //for each control
+            fieldname = controlSet[c].GetFieldName(); //get BC field name
+            popupType = controlSet[c].GetPopupType(); //get popup type (e.g "Mvg")
+            field = fieldmap[fieldname];  //get BC field instance
+            if (field){ //only applies to controls that expose a BC field (excludes buttons etc)
+                controlElem = $("[name='" + controlSet[c].GetInputName() + "']");  //get DOM element
+                //figure out if control is read only
+                isReadOnly = field.IsReadOnly() == "1" || controlElem.attr("aria-readonly") == "true" ? true : false;
+                if (!isReadOnly || popupType == "Mvg"){  //if not read only or an MVG field
+                    //add field name and current value to output
+                    retvalue[controlSet[c].GetFieldName()] = pm.ExecuteMethod("GetFieldValue",controlSet[c]);
+                }
+            }
+        }
+    }
+    return retvalue;
+};
+
+/*
+Function ComputeProgress: Calculates the ratio of populated vs. total editable controls
+Input: context (PM, PR or applet instance)
+Output: object with statistics
+ */
+siebelhub.ComputeProgress = function(context){
+    var pm = null;
+    var progress = 0;
+    var nFull = 0;
+    var nEmpty = 0;
+    var nTotal = 0;
+    var retval = {};
+    pm = siebelhub.ValidateContext(context);
+    if (pm){
+        //call helper function
+        var fields = siebelhub.GetEditableFields(pm);
+        nTotal = Object.keys(fields).length; //get total # of editable controls
+        for (f in fields){ //iterate
+            if (fields[f] == ""){  //control is currently empty
+                nEmpty++;
+            }
+            else{   //control has a value
+                nFull++;
+            }
+        }
+        retval["t"] = nTotal;
+        retval["f"] = nFull;
+        retval["e"] = nEmpty;
+        retval["i"] = nFull/nTotal; //calculate ratio of full vs. total
+        retval["p"] = 100*(nFull/nTotal); //ratio in percent
+    }
+    return retval;
+};
+
+/*
+Function ShowProgressBar: paints a progress bar on the applet header
+Requires CSS: see siebelhub.css on GitHub for details
+Input: context (PM, PR or applet instance)
+ */
+siebelhub.ShowProgressBar = function(context){
+    var pm = null;
+    pm = siebelhub.ValidateContext(context);
+    if (pm){
+        var appletElem = siebelhub.GetAppletElem(pm);
+        var appletId = pm.Get("GetFullId");
+        //we need a unique id, let's use the applet id
+        var pb_id = "sh_pb_" + appletId;
+        //now let's get the applet header
+        var appletHeader = appletElem.find($(".siebui-applet-header"));
+
+        if ($("#" + pb_id).length == 0){ //avoid deja vu
+            //create a div
+            var pb = siebelhub.GenerateDOMElement("div",{"id":pb_id, "class":"sh_progressbar"});
+            //paint the progress bar
+            appletHeader.after(pb.progressbar());
+        }
+        //call helper function to update the progress bar
+        siebelhub.UpdateProgressBar(pm);
+        //EXPERIMENTAL: attach to PM events
+        siebelhub.Overdrive(pm,"FieldChange",siebelhub.UpdateProgressBar);
+        //ShowSelection caused some problems, downgraded to 'veery experimental'
+        //siebelhub.Overdrive(pm,"ShowSelection",siebelhub.UpdateProgressBar);
+    }
+};
+
+/*
+Function UpdateProgressBar: locates and updates (value, color) of a progress bar on the given applet
+Input: context(optional): PM, PR or applet instance
+ */
+siebelhub.UpdateProgressBar = function(context){
+    var pm = null;
+    if (context.constructor.name != "AppletControl"){ //avoid issues when called from FieldChange event
+        pm = siebelhub.ValidateContext(context);
+    }
+    else if (!pm){ //use current object context (this) if we still haven't got a PM
+        pm = siebelhub.ValidateContext(this);
+    }
+    if (pm){
+        var appletElem = siebelhub.GetAppletElem(pm);
+        var pb = appletElem.find(".sh_progressbar"); //try to locate progress bar
+        if (pb.length > 0){ //we got one...
+            var stats = siebelhub.ComputeProgress(pm);  //get current stats from helper function
+            var val = stats.p; //value in percent
+            pb.progressbar("value", val);  //set value
+            //set the title, so we have a decent tooltip
+            pb.attr("title",stats.f + shMsg["OF_FIELDS"] + stats.t + shMsg["POP_FIELDS_1"] + parseInt(val) + shMsg["POP_FIELDS_2"]);
+            //get color for value bar
+            var color = siebelhub.GetColor(val);
+            //set color
+            pb.find(".ui-progressbar-value").css("background",color);
+        }
+    }
+};
+
+/*
+Function GetColor: returns a red-amber-green color tone depending on input value
+Input: value (Number)
+Output: rgb encoded color string
+ */
+siebelhub.GetColor = function(val){
+    var g = val <= 50 ? val*2 : 100; //if val <= 50, then green will be 0-100, above green will be 100
+    var r = val > 50 ? 200 - (val*2) : 100; //if val > 50, red will be 100, above, red will be 100 - 0
+    return "rgb(" + r + "%," + g + "%,0%)"; //color in rgb % style e.g. "rgb(40%,100%,0%)"
 };
 
 /*
@@ -1040,6 +1182,8 @@ shMsg["HELLO"]          = "Hello";
 shMsg["HELLO_WORLD"]    = "Hello World";
 shMsg["OK"]             = "OK";
 shMsg["CLOSE"]          = "Close";
+shMsg["SAVE"]           = "Save";
+shMsg["CANCEL"]         = "Cancel";
 shMsg["ERROR_DLG_TITLE"]= "whoopsy-daisy...";
 shMsg["NOPM_1"]         = "This function requires valid context (Applet, PM or PR).";
 shMsg["NOCTRL_1"]       = "This function requires a valid control reference.";
@@ -1081,6 +1225,11 @@ shMsg["DR_LOG_TIME"]    = "Time Elapsed: ";
 shMsg["DR_LOG_COUNT"]   = "Record Count: ";
 shMsg["DR_VIEW_MODE"]   = "View Mode: ";
 shMsg["COMMIT_PENDING"] = "Detected pending commit. Trying to write record.";
+shMsg["SH_PENDING_CONFIRM"] = "You have unsaved changes.";
+shMsg["SH_PEND_TITLE"]  = "Potential Data Loss!";
+shMsg["OF_FIELDS"]      = " fields of ";
+shMsg["POP_FIELDS_1"]   = " populated (";
+shMsg["POP_FIELDS_2"]   = "%).";
 
 //these might not need translation since they are more like Constance ;-)
 var viewmodes = ["SalesRepView","ManagerView","PersonalView","AllView","","OrganizationView","","GroupView","CatalogView","SubOrganizationView"];
