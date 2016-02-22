@@ -59,7 +59,7 @@
  07-FEB-2016    v1.9    ahansal     Added notification for unsaved changes via tramp stamp icon
  13-FEB 2016    v2.0    ahansal     Added GetEditableField method
  15-FEB 2016    v2.0    ahansal     Added progress bar functionality
- 22-FEB-2016    v2.0    ahansal     added string override to PL
+ 22-FEB-2016    v2.0    ahansal     added string override for query placeholder text
 
  TODO:
 
@@ -841,8 +841,6 @@ function SiebelHubPL(){
         siebelhub.Overdrive(appletmap[a],"ShowSelection",siebelhub.NotifyPendingChanges);
     }
     siebelhub.ShowProgressBar(siebelhub.GetActiveApplet());
-    //let's override the query placeholder text (<Case Sensitive>), because we can ;-)
-    siebelhub.swemessageOverride("IDS_SWE_CSQ_WATERMARK",shMsg["QUERY_PLACEHOLDER_OVERRIDE"]);
 }
 
 /*
@@ -1232,6 +1230,9 @@ shMsg["OF_FIELDS"]      = " fields of ";
 shMsg["POP_FIELDS_1"]   = " populated (";
 shMsg["POP_FIELDS_2"]   = "%).";
 shMsg["QUERY_PLACEHOLDER_OVERRIDE"] = "";
+
+//let's override the query placeholder text (<Case Sensitive>), because we can ;-)
+siebelhub.swemessageOverride("IDS_SWE_CSQ_WATERMARK",shMsg["QUERY_PLACEHOLDER_OVERRIDE"]);
 
 //these might not need translation since they are more like Constance ;-)
 var viewmodes = ["SalesRepView","ManagerView","PersonalView","AllView","","OrganizationView","","GroupView","CatalogView","SubOrganizationView"];
