@@ -59,13 +59,13 @@
  07-FEB-2016    v1.9    ahansal     Added notification for unsaved changes via tramp stamp icon
  13-FEB 2016    v2.0    ahansal     Added GetEditableField method
  15-FEB 2016    v2.0    ahansal     Added progress bar functionality
+ 22-FEB-2016    v2.0    ahansal     added string override to PL
 
  TODO:
 
  ebook documentation (ebook on Amazon and PDF on Siebel Hub Shop)
  cross browser testing (currently testing on FF and Chrome)
- Get number of populated/empty controls/cells for an applet (use case: progress bar)
- conditional formatting
+ conditional formatting for list applets
  GetRecordCount function (same as GetFullRecordSet)
  GetAppletObjByName
  "Applet Whitelist/Blacklist" (limit functionality for some applets)
@@ -535,6 +535,7 @@ siebelhub.MakeAppletCollapsible = function(context,mode){
             break;
         default:
             //get the PM
+            //TODO: ensure it saves to user preferences
             var pm = siebelhub.ValidateContext(context);
             if (pm){
                 //check if PM property is not already set
@@ -840,6 +841,8 @@ function SiebelHubPL(){
         siebelhub.Overdrive(appletmap[a],"ShowSelection",siebelhub.NotifyPendingChanges);
     }
     siebelhub.ShowProgressBar(siebelhub.GetActiveApplet());
+    //let's override the query placeholder text (<Case Sensitive>), because we can ;-)
+    siebelhub.swemessageOverride("IDS_SWE_CSQ_WATERMARK",shMsg["QUERY_PLACEHOLDER_OVERRIDE"]);
 }
 
 /*
@@ -854,10 +857,8 @@ siebelhub.Overdrive = function(context,proto,method){
             case "EndLife"    : pm.GetRenderer().constructor.prototype.EndLife = method;
                                 break;
             //register PM bindings at runtime
-            case "FieldChange":
-            case "ShowSelection": pm.AttachPMBinding(proto,method);
-                                  break;
-            default           : break;
+            default: pm.AttachPMBinding(proto,method);
+                                break;
         }
     }
 };
@@ -1230,6 +1231,7 @@ shMsg["SH_PEND_TITLE"]  = "Potential Data Loss!";
 shMsg["OF_FIELDS"]      = " fields of ";
 shMsg["POP_FIELDS_1"]   = " populated (";
 shMsg["POP_FIELDS_2"]   = "%).";
+shMsg["QUERY_PLACEHOLDER_OVERRIDE"] = "";
 
 //these might not need translation since they are more like Constance ;-)
 var viewmodes = ["SalesRepView","ManagerView","PersonalView","AllView","","OrganizationView","","GroupView","CatalogView","SubOrganizationView"];
