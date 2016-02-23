@@ -60,6 +60,7 @@
  13-FEB 2016    v2.0    ahansal     Added GetEditableField method
  15-FEB 2016    v2.0    ahansal     Added progress bar functionality
  22-FEB-2016    v2.0    ahansal     added string override for query placeholder text
+ 23-FEB-2016    v2.1    ahansal     enhanced MakeAppletCollapsible method to retrieve and store applet state in user preferences
 
  TODO:
 
@@ -535,11 +536,20 @@ siebelhub.MakeAppletCollapsible = function(context,mode){
             break;
         default:
             //get the PM
-            //TODO: ensure it saves to user preferences
             var pm = siebelhub.ValidateContext(context);
+            var viewname = SiebelApp.S_App.GetActiveView().GetName();
             if (pm){
-                //check if PM property is not already set
-                if (!pm.Get("defaultAppletDisplayMode")) {
+                debugger;
+                //check for stored state in user pref
+                var key = viewname + shMsg["A_STATE"];
+                var state = siebelhub.GetUserPref(pm,key);
+                if (state == "expanded" || state == "collapsed"){
+                    //override mode
+                    mode = state;
+                }
+                //check if PM property is not already set in repository
+                var repstate = pm.Get("defaultAppletDisplayMode");
+                if (!repstate) { //not set
                     //set property
                     if (mode == "expanded" || mode == "collapsed"){
                         pm.SetProperty("defaultAppletDisplayMode",mode);
@@ -554,6 +564,27 @@ siebelhub.MakeAppletCollapsible = function(context,mode){
                         pr.ShowCollapseExpand();
                     }
                 }
+                //get the collapse/expand buttons
+                var appletElem = siebelhub.GetAppletElem(pm);
+                var cb = appletElem.find(".siebui-btn-icon-collapsed");
+                var eb = appletElem.find(".siebui-btn-icon-expanded");
+                if (repstate){ //PM user prop was defined in repository
+                    if (repstate != state && state == "collapsed") {
+                        //we need to expand so press the right button
+                        eb.click();
+                    }
+                    else if (repstate != state && state == "expanded"){
+                        //we need to collapse so press the right button
+                        cb.click();
+                    }
+                }
+                //establish click event handlers to capture state as user preference
+                cb.click(function(e){
+                    siebelhub.SetUserPref(pm,key,"collapsed");
+                });
+                eb.click(function(e){
+                    siebelhub.SetUserPref(pm,key,"expanded");
+                });
             }
             break;
     }
@@ -1244,6 +1275,7 @@ shMsg["AP_PREFIX"]      = "s_";
 shMsg["AP_POSTFIX"]     = "_div";
 shMsg["INNO_PACK"]      = "IP";
 shMsg["A_SIZE"]         = "__size";
+shMsg["A_STATE"]        = "__state";
 shMsg["UP_KEY"]         = "Key";
 //shMsg["SIEBEL_VER"]     = SiebelApp.S_App.GetAppPropertySet().GetChildByType("api").GetProperty("vs");
 shMsg["SIEBEL_BUILD"]   = SIEBEL_BUILD.split("/")[0];
