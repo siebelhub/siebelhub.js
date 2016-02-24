@@ -69,3 +69,39 @@
     height: 2px;
     border: 0;
 }
+
+/*Bring back the 'active record indicator'*/
+/*Kudos to Jeroen Burgers: https://oracleimplementationadvisor.wordpress.com/2015/07/07/siebel-open-ui-revival-of-the-record-selector-the-sequel/ */
+
+tr.ui-row-ltr > td[role='gridcell']:nth-child(2) { /*Add 20px text indent to first (visible) column */
+    text-indent: 20px;
+}
+
+tr.ui-row-ltr > td:nth-child(2) input[type='text'] { /* Adjust text box width */
+    width: calc(100% - 20px) !important;
+}
+
+tr.ui-row-ltr > td[role='gridcell']:nth-child(2) > span { /* Record selector */
+    margin: 0 0 0 -49px; /* from -29px to -49px */
+}
+
+tr.jqgrow.ui-state-highlight td:nth-child(2).edit-cell::before { /* Record selector */
+    position: relative;
+    top: 5px;
+}
+
+tr.ui-state-highlight td:nth-child(2):before { /* Record selector */
+    content: "\e689"; /* Selected rows */
+    float: left;
+    font-family: oracle;
+    margin-right: -20px;
+    text-indent: 4px;
+}
+
+tr.ui-state-highlight.selected-row td:nth-child(2):before { /* Record selector */
+    content: "\e63e"; /* Last row selected */
+    float: left;
+    font-family: oracle;
+    margin-right: -20px;
+    text-indent: 4px;
+}
