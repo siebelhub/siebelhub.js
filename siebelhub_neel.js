@@ -63,6 +63,7 @@
  23-FEB-2016    v2.1    ahansal     enhanced MakeAppletCollapsible method to retrieve and store applet state in user preferences
  20-MAR-2016    v3.0    ngautam     reworked siebelhub.js to extend SiebelApp.S_App http://siebelunleashed.com/siebelhub-javascript-library-reworked-solution/
  26-MAR-2016    v3.1    ahansal     implemented ngautam's rework for entire library
+ 28-MAR-2016    v3.1    ahansal     applied minor fixes (this and that...), added GetshMsg function
 
  TODO:
 
@@ -159,17 +160,22 @@ if (typeof(SiebelApp.S_App.siebelHub) === "undefined") {
 
         console.log("Init 1");
 
+        /* Function GetshMsg: gets a message from the library of translatable strings
+           Inputs: message key
+           Outputs: message text
+         */
         sHub.prototype.GetshMsg = function(key){
-            return shMsg[key];
+             return shMsg[key];
         };
+        //end of localization
 
+        /*Main function*/
         function sHub(){
-            var a = "DD";
-            var k = "EE";
-
+            //var a = "DD";
+            //var k = "EE";
         };//end of sHub
 
-        //end of localization
+
         sHub.prototype.GoToTheHub = function(){
             window.open("http://www.siebelhub.com");
         };
@@ -689,6 +695,7 @@ if (typeof(SiebelApp.S_App.siebelHub) === "undefined") {
          Retrieves and saves applet size from/to user preferences
          */
         sHub.prototype.MakeAppletResizable = function(context,resize){
+            debugger;
             switch (context.toString().toLowerCase()){
                 //magic keyword has been passed instead of context...
                 case "all":
@@ -716,11 +723,13 @@ if (typeof(SiebelApp.S_App.siebelHub) === "undefined") {
                         }
                         //make applet resizable
                         appletElem.resizable();
+                        var that = this;
                         //define what happens when user resizes the applet
                         appletElem.on("resizestop", function (event,ui) {
+                            debugger;
                             var size = ui.size.width + "x" + ui.size.height;
                             //store new size in user preferences
-                            this.SetUserPref(context,key,size);
+                            that.SetUserPref(context,key,size);
                         });
                     }
                     break;
